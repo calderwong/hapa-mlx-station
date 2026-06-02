@@ -4,15 +4,15 @@ This `reference/` folder is my **local archive of distilled “current truth”*
 
 ## Primary sources used
 
-- `Desktop/hapa-og/docs/HAPA_AG_SYSTEM_REFERENCE.md`
-- `Desktop/hapa-og/docs/.mind/Comms/WORKSTREAMS.md`
-- `Desktop/hapa-og/docs/.mind/Comms/PROTOCOL.md`
-- `Desktop/hapa-og/docs/reference/HAPA_NODE_API_REFERENCE.md`
-- `Desktop/hapa-og/docs/reference/HAPA_NODE_CLUSTER_TOPOLOGY.md`
-- `Desktop/hapa-og/docs/VALIDATION_PROTOCOL.md`
-- `Desktop/hapa-og/docs/PRIORITY.md`
-- `Desktop/hapa-og/docs/🧹housecleaning_protocol_ALWAYS_READ.md`
-- `Desktop/hapa-og/docs/DESIGN_LOCAL_IMAGE_GEN.md` (Python Bridge pattern)
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/HAPA_AG_SYSTEM_REFERENCE.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/.mind/Comms/WORKSTREAMS.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/.mind/Comms/PROTOCOL.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/reference/HAPA_NODE_API_REFERENCE.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/reference/HAPA_NODE_CLUSTER_TOPOLOGY.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/VALIDATION_PROTOCOL.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/PRIORITY.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/🧹housecleaning_protocol_ALWAYS_READ.md`
+- `${HAPA_DESKTOP_ROOT}/hapa-og/docs/DESIGN_LOCAL_IMAGE_GEN.md` (Python Bridge pattern)
 
 ## External primary source
 

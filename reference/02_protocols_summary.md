@@ -1,6 +1,6 @@
 # Protocols Summary (Hapa AG-aligned)
 
-This repo/workspace should follow the same operating principles captured in `Desktop/hapa-og/docs`.
+This repo/workspace should follow the same operating principles captured in `${HAPA_DESKTOP_ROOT}/hapa-og/docs`.
 
 ## Priority ordering
 
