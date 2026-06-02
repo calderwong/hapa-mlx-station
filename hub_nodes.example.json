@@ -1,0 +1,12 @@
+[
+  {
+    "id": "a",
+    "base_url": "http://127.0.0.1:8723",
+    "token": "node_token_a"
+  },
+  {
+    "id": "b",
+    "base_url": "http://127.0.0.1:8725",
+    "token": "node_token_b"
+  }
+]

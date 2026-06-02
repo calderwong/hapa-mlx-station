@@ -1,0 +1,35 @@
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+.env
+.node_token
+
+# Local runtime data (sqlite DB, artifacts, generated images)
+data/
+data_node*/
+data_selftest-*/
+data_node_b/
+*.sqlite3
+*.sqlite
+*.sqlite*
+*.db
+
+# Local ad hoc smoke outputs and token-bearing operator scripts
+real_mflux_smoke*.png
+self_test*.json
+test_connection.py
+test_new_features.py
+test_preview.py
+verify_preview_features.py
+verify_ui.html
+package-lock.json
+
+# Logs
+*.log

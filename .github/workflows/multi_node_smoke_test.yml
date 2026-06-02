@@ -1,0 +1,116 @@
+name: Multi-node Hub Smoke Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      - name: Run multi-node smoke test
+        run: |
+          set -euo pipefail
+
+          mkdir -p ci_data_a ci_data_b
+
+          export HAPA_MEDIA_NODE_DUMMY_GENERATION=1
+
+          HAPA_MEDIA_NODE_HOST=127.0.0.1 \
+          HAPA_MEDIA_NODE_PORT=8723 \
+          HAPA_MEDIA_NODE_TOKEN=node_token_a \
+          HAPA_MEDIA_NODE_STORAGE_DIR="$PWD/ci_data_a" \
+          python3 -m hapa_media_node serve > node_a.log 2>&1 &
+          NODE_A_PID=$!
+
+          HAPA_MEDIA_NODE_HOST=127.0.0.1 \
+          HAPA_MEDIA_NODE_PORT=8725 \
+          HAPA_MEDIA_NODE_TOKEN=node_token_b \
+          HAPA_MEDIA_NODE_STORAGE_DIR="$PWD/ci_data_b" \
+          python3 -m hapa_media_node serve > node_b.log 2>&1 &
+          NODE_B_PID=$!
+
+          HAPA_MEDIA_HUB_HOST=127.0.0.1 \
+          HAPA_MEDIA_HUB_PORT=8726 \
+          HAPA_MEDIA_HUB_TOKEN=hub_token \
+          HAPA_MEDIA_HUB_CAPS_TTL_SECONDS=30 \
+          HAPA_MEDIA_HUB_NODES='[{"id":"a","base_url":"http://127.0.0.1:8723","token":"node_token_a"},{"id":"b","base_url":"http://127.0.0.1:8725","token":"node_token_b"}]' \
+          python3 -m hapa_media_node hub > hub.log 2>&1 &
+          HUB_PID=$!
+
+          cleanup() {
+            kill "$HUB_PID" "$NODE_A_PID" "$NODE_B_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          python3 scripts/multi_node_hub_smoke_test.py \
+            --hub-url http://127.0.0.1:8726 \
+            --hub-token hub_token \
+            --expected-nodes a,b \
+            --jobs 3 \
+            --startup-timeout-seconds 30 \
+            --timeout-seconds 120
+
+          kill "$NODE_B_PID" 2>/dev/null || true
+
+          python3 - <<'PY'
+          import json
+          import urllib.request
+
+          token = "hub_token"
+          url = "http://127.0.0.1:8726/v1/images/generations"
+          payload = {"mode": "txt2img", "prompt": "CI post-time failover", "model": "schnell", "steps": 1}
+
+          req = urllib.request.Request(
+              url=url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+              method="POST",
+          )
+
+          with urllib.request.urlopen(req, timeout=30) as res:
+              body = res.read().decode("utf-8")
+
+          data = json.loads(body) if body else {}
+          task_id = str(data.get("task_id") or "")
+          assert task_id and ":" in task_id, task_id
+          node_id = task_id.split(":", 1)[0]
+          assert node_id != "b", task_id
+          print("post-time failover OK:", task_id)
+          PY
+
+          python3 scripts/multi_node_hub_smoke_test.py \
+            --hub-url http://127.0.0.1:8726 \
+            --hub-token hub_token \
+            --expected-nodes a \
+            --jobs 0 \
+            --run-failover \
+            --failover-node-id b \
+            --failover-wait-seconds 30 \
+            --startup-timeout-seconds 30 \
+            --timeout-seconds 120
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          echo "=== node_a.log ==="
+          cat node_a.log || true
+          echo "=== node_b.log ==="
+          cat node_b.log || true
+          echo "=== hub.log ==="
+          cat hub.log || true

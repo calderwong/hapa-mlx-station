@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hapa Keys Node</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f17;
+        --panel: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.14);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.7);
+        --ok: #39d98a;
+        --bad: #ff4d6d;
+        --warn: #ffd166;
+        --btn: rgba(255, 255, 255, 0.12);
+        --btnHover: rgba(255, 255, 255, 0.18);
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        background: radial-gradient(1200px 700px at 20% 20%, rgba(73, 133, 224, 0.16), transparent 60%),
+          radial-gradient(900px 600px at 80% 10%, rgba(150, 90, 220, 0.14), transparent 55%),
+          radial-gradient(900px 600px at 70% 90%, rgba(30, 200, 140, 0.10), transparent 60%),
+          var(--bg);
+        color: var(--text);
+      }
+
+      header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(10px);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.02em;
+      }
+
+      .sub {
+        margin-top: 8px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 18px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      @media (min-width: 920px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: 14px;
+        padding: 14px;
+        backdrop-filter: blur(12px);
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.35);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 12px;
+        outline: none;
+      }
+
+      input:focus {
+        border-color: rgba(120, 180, 255, 0.6);
+      }
+
+      button {
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--btn);
+        color: var(--text);
+        cursor: pointer;
+        font-family: var(--sans);
+        font-size: 12px;
+      }
+
+      button:hover {
+        background: var(--btnHover);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--warn);
+      }
+
+      .dot.ok {
+        background: var(--ok);
+      }
+
+      .dot.bad {
+        background: var(--bad);
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .secretRow {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.18);
+        margin-top: 10px;
+      }
+
+      .secretMeta {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .secretActions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .secretButtons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .out {
+        width: 100%;
+        min-height: 140px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.35);
+        color: var(--text);
+        padding: 10px;
+        font-family: var(--mono);
+        font-size: 12px;
+        box-sizing: border-box;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Hapa Keys Node</h1>
+      <div class="sub" id="baseUrlLabel"></div>
+    </header>
+    <main>
+      <div class="grid">
+        <div class="card">
+          <div class="row" style="justify-content: space-between;">
+            <div class="pill"><span class="dot" id="healthDot"></span><span id="healthText">disconnected</span></div>
+            <button id="refreshBtn">Refresh</button>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label for="tokenInput">Bearer token</label>
+            <div class="row">
+              <div style="flex: 1; min-width: 240px;">
+                <input id="tokenInput" placeholder="paste token" />
+              </div>
+              <button id="connectBtn">Connect</button>
+            </div>
+            <div class="muted" style="margin-top: 10px; font-size: 12px;">
+              Admin endpoints can be disabled via env. Secrets are never returned to the browser; only metadata.
+            </div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <div class="out" id="statusOut"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row" style="justify-content: space-between;">
+            <div>
+              <div class="mono">Admin secrets</div>
+              <div class="muted" style="font-size: 12px; margin-top: 6px;">Set or rotate keys. Values are sent only on PUT.</div>
+            </div>
+            <button id="reloadSecretsBtn">Reload</button>
+          </div>
+
+          <div id="secretsContainer"></div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const DEV_TOKEN_KEY = 'hapa_keys_node_dev_token_v1';
+
+      function isLoopbackHost(hostname) {
+        const h = String(hostname || '').toLowerCase();
+        return h === 'localhost' || h === '127.0.0.1' || h === '::1' || h.startsWith('127.');
+      }
+
+      function getToken() {
+        const el = document.getElementById('tokenInput');
+        let t = String(el.value || '').trim();
+        if (t.toLowerCase().startsWith('bearer ')) t = t.slice(7).trim();
+        return t;
+      }
+
+      function setToken(t) {
+        const el = document.getElementById('tokenInput');
+        el.value = String(t || '').trim();
+      }
+
+      function setStatusDot(mode, text) {
+        const dot = document.getElementById('healthDot');
+        const label = document.getElementById('healthText');
+        dot.classList.remove('ok', 'bad');
+        if (mode) dot.classList.add(mode);
+        label.textContent = text;
+      }
+
+      async function httpJson(method, path, payload, token) {
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        if (payload !== undefined && payload !== null) headers['Content-Type'] = 'application/json';
+
+        const res = await fetch(path, {
+          method,
+          headers,
+          body: payload !== undefined && payload !== null ? JSON.stringify(payload) : undefined,
+        });
+
+        const text = await res.text();
+        let data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = { raw: text };
+        }
+
+        if (!res.ok) {
+          const err = new Error('HTTP ' + res.status);
+          err.data = data;
+          throw err;
+        }
+
+        return data;
+      }
+
+      function renderStatus(obj) {
+        const out = document.getElementById('statusOut');
+        out.textContent = JSON.stringify(obj, null, 2);
+      }
+
+      function secretCard(name, meta, adminEnabled) {
+        const row = document.createElement('div');
+        row.className = 'secretRow';
+
+        const left = document.createElement('div');
+        left.className = 'secretMeta';
+        left.innerHTML = `
+          <div class="mono">${name}</div>
+          <div class="pill"><span class="dot ${meta && meta.configured ? 'ok' : 'bad'}"></span><span>${meta && meta.configured ? 'configured' : 'missing'}</span></div>
+          <div class="mono muted">length: ${meta && typeof meta.length === 'number' ? meta.length : 0}</div>
+          <div class="mono muted">last4: ${meta && meta.last4 ? meta.last4 : ''}</div>
+        `;
+
+        const right = document.createElement('div');
+        right.className = 'secretActions';
+
+        const label = document.createElement('label');
+        label.textContent = 'New value';
+
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.placeholder = 'paste new value';
+
+        const btns = document.createElement('div');
+        btns.className = 'secretButtons';
+
+        const save = document.createElement('button');
+        save.textContent = 'Save';
+        save.disabled = !adminEnabled;
+
+        const clear = document.createElement('button');
+        clear.textContent = 'Delete';
+        clear.disabled = !adminEnabled;
+
+        save.addEventListener('click', async () => {
+          const tok = getToken();
+          const v = String(input.value || '').trim();
+          if (!v) {
+            alert('Missing value');
+            return;
+          }
+
+          save.disabled = true;
+          try {
+            await httpJson('PUT', `/v1/admin/secrets/${encodeURIComponent(name)}`, { value: v }, tok);
+            input.value = '';
+            await refreshAll();
+          } catch (e) {
+            alert(JSON.stringify({ error: String(e.message || e), detail: e.data || null }, null, 2));
+          } finally {
+            save.disabled = !adminEnabled;
+          }
+        });
+
+        clear.addEventListener('click', async () => {
+          const tok = getToken();
+          clear.disabled = true;
+          try {
+            await httpJson('DELETE', `/v1/admin/secrets/${encodeURIComponent(name)}`, null, tok);
+            input.value = '';
+            await refreshAll();
+          } catch (e) {
+            alert(JSON.stringify({ error: String(e.message || e), detail: e.data || null }, null, 2));
+          } finally {
+            clear.disabled = !adminEnabled;
+          }
+        });
+
+        btns.appendChild(save);
+        btns.appendChild(clear);
+
+        right.appendChild(label);
+        right.appendChild(input);
+        right.appendChild(btns);
+
+        row.appendChild(left);
+        row.appendChild(right);
+        return row;
+      }
+
+      async function refreshAll() {
+        setStatusDot(null, 'loading');
+
+        const base = window.location.origin;
+        document.getElementById('baseUrlLabel').textContent = base;
+
+        let health;
+        try {
+          health = await httpJson('GET', '/health', null, null);
+        } catch (e) {
+          setStatusDot('bad', 'health error');
+          renderStatus({ error: String(e.message || e), detail: e.data || null });
+          return;
+        }
+
+        const tok = getToken();
+        let caps = null;
+        let adminSecrets = null;
+
+        try {
+          caps = await httpJson('GET', '/capabilities', null, tok);
+        } catch (e) {
+          caps = { error: 'Unauthorized or unavailable', detail: e.data || null };
+        }
+
+        const adminEnabled = !!health.admin_enabled;
+
+        if (adminEnabled) {
+          try {
+            adminSecrets = await httpJson('GET', '/v1/admin/secrets', null, tok);
+          } catch (e) {
+            adminSecrets = { error: 'Unauthorized or unavailable', detail: e.data || null };
+          }
+        } else {
+          adminSecrets = { error: 'Admin disabled' };
+        }
+
+        const status = { health, capabilities: caps, admin_secrets: adminSecrets };
+        renderStatus(status);
+
+        const ok = !!(health && health.ok);
+        setStatusDot(ok ? 'ok' : 'bad', ok ? 'ok' : 'bad');
+
+        const container = document.getElementById('secretsContainer');
+        container.innerHTML = '';
+
+        const expected = ['gemini_api_key', 'openai_api_key'];
+        const metaByName = {};
+
+        const list = adminSecrets && adminSecrets.secrets;
+        if (Array.isArray(list)) {
+          for (const item of list) {
+            if (item && item.name) metaByName[item.name] = item;
+          }
+        }
+
+        for (const name of expected) {
+          const meta = metaByName[name] || { name, configured: false, length: 0, last4: '' };
+          container.appendChild(secretCard(name, meta, adminEnabled));
+        }
+      }
+
+      function init() {
+        const base = window.location.origin;
+        document.getElementById('baseUrlLabel').textContent = base;
+
+        if (isLoopbackHost(window.location.hostname)) {
+          const saved = window.localStorage.getItem(DEV_TOKEN_KEY);
+          if (saved && String(saved).trim()) setToken(String(saved).trim());
+
+          const input = document.getElementById('tokenInput');
+          input.addEventListener('input', () => {
+            const t = getToken();
+            if (t) window.localStorage.setItem(DEV_TOKEN_KEY, t);
+          });
+        }
+
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+          const t = getToken();
+          if (isLoopbackHost(window.location.hostname) && t) {
+            window.localStorage.setItem(DEV_TOKEN_KEY, t);
+          }
+          await refreshAll();
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+        document.getElementById('reloadSecretsBtn').addEventListener('click', refreshAll);
+
+        refreshAll();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,4282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hapa Media Node</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg0: #020617;
+        --bg1: #0b1224;
+        --panel: rgba(15, 23, 42, 0.72);
+        --border: rgba(148, 163, 184, 0.16);
+        --text0: rgba(248, 250, 252, 0.96);
+        --text1: rgba(226, 232, 240, 0.86);
+        --muted: rgba(148, 163, 184, 0.78);
+        --truth: #06b6d4;
+        --love: #ec4899;
+        --conviction: #a855f7;
+        --gold: #fbbf24;
+        --ok: #34d399;
+        --bad: #fb7185;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+        --shadow2: 0 10px 30px rgba(0, 0, 0, 0.45);
+        --radius: 14px;
+        --cut: 14px;
+        --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        background: radial-gradient(1200px 600px at 20% 10%, rgba(6, 182, 212, 0.12), transparent 60%),
+          radial-gradient(900px 500px at 85% 15%, rgba(168, 85, 247, 0.10), transparent 55%),
+          radial-gradient(800px 500px at 30% 85%, rgba(236, 72, 153, 0.08), transparent 55%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        color: var(--text0);
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(148, 163, 184, 0.10) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(148, 163, 184, 0.10) 1px, transparent 1px);
+        background-size: 52px 52px;
+        opacity: 0.22;
+        mask-image: radial-gradient(65% 55% at 50% 25%, black, transparent 70%);
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(700px 500px at 50% 0%, rgba(0, 0, 0, 0.25), transparent 70%),
+          radial-gradient(700px 500px at 50% 100%, rgba(0, 0, 0, 0.35), transparent 70%);
+      }
+
+      .app {
+        width: min(1200px, calc(100% - 32px));
+        margin: 22px auto 40px;
+        position: relative;
+      }
+
+      .hud {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .kicker {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(251, 191, 36, 0.92);
+      }
+
+      .title {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+
+      .title .accent { color: var(--truth); text-shadow: 0 0 18px rgba(6, 182, 212, 0.22); }
+
+      .hudRight {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        background: rgba(2, 6, 23, 0.52);
+        padding: 8px 10px;
+        font-size: 11px;
+        border-radius: 999px;
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.55);
+        box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.10);
+      }
+
+      .dot.ok { background: rgba(52, 211, 153, 0.95); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12); }
+      .dot.bad { background: rgba(251, 113, 133, 0.95); box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12); }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        backdrop-filter: blur(12px);
+        box-shadow: var(--shadow2);
+        clip-path: polygon(
+          0 var(--cut),
+          var(--cut) 0,
+          calc(100% - var(--cut)) 0,
+          100% var(--cut),
+          100% calc(100% - var(--cut)),
+          calc(100% - var(--cut)) 100%,
+          var(--cut) 100%,
+          0 calc(100% - var(--cut))
+        );
+      }
+
+      .panelHeader {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      }
+
+      .panelTitle {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.9);
+      }
+
+      .panelMeta {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(148, 163, 184, 0.78);
+        text-align: right;
+      }
+
+      .grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 14px;
+      }
+
+      @media (max-width: 980px) {
+        .grid { grid-template-columns: 1fr; }
+        .hud { align-items: flex-start; }
+      }
+
+      .content { padding: 14px 16px 16px; }
+
+      details.section {
+        margin-top: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.10);
+        border-radius: 12px;
+        background: rgba(2, 6, 23, 0.35);
+        padding: 10px 12px;
+      }
+
+      details.section > summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 11px;
+        font-family: var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.9);
+      }
+
+      details.section > summary::-webkit-details-marker { display: none; }
+
+      .summaryRight {
+        font-family: var(--mono);
+        letter-spacing: 0.06em;
+        font-size: 10px;
+        color: rgba(148, 163, 184, 0.78);
+      }
+
+      .field { margin-top: 10px; }
+
+      .field label {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: rgba(226, 232, 240, 0.88);
+      }
+
+      .hint { font-size: 12px; color: rgba(148, 163, 184, 0.86); margin-top: 6px; }
+
+      input, select, textarea {
+        width: 100%;
+        margin-top: 6px;
+        padding: 11px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(2, 6, 23, 0.55);
+        color: rgba(248, 250, 252, 0.95);
+        outline: none;
+        font-size: 14px;
+      }
+
+      textarea { min-height: 120px; resize: vertical; }
+
+      input[type="checkbox"] {
+        width: auto;
+        margin-top: 0;
+        padding: 0;
+        accent-color: var(--gold);
+      }
+
+      .check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.86);
+        user-select: none;
+      }
+
+      input:focus, select:focus, textarea:focus {
+        border-color: rgba(6, 182, 212, 0.55);
+        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+      }
+
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      @media (max-width: 620px) {
+        .row2 { grid-template-columns: 1fr; }
+      }
+
+      .actions {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .actions .field { margin-top: 0; }
+
+      @media (max-width: 520px) {
+        .actions { grid-template-columns: 1fr; }
+      }
+
+      button {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(2, 6, 23, 0.35);
+        color: rgba(248, 250, 252, 0.92);
+        padding: 11px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(251, 191, 36, 0.55);
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.10), 0 18px 40px rgba(0, 0, 0, 0.25);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        transform: none;
+        box-shadow: none;
+      }
+
+      #connect {
+        width: auto;
+        padding: 10px 14px;
+      }
+
+      .primary {
+        border-color: rgba(251, 191, 36, 0.50);
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(6, 182, 212, 0.10));
+      }
+
+      .primary:hover {
+        border-color: rgba(251, 191, 36, 0.80);
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12), 0 0 26px rgba(6, 182, 212, 0.10), 0 22px 50px rgba(0, 0, 0, 0.35);
+      }
+
+      #submit.legendary {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        border-color: rgba(251, 191, 36, 0.72);
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(6, 182, 212, 0.14), rgba(168, 85, 247, 0.14));
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.10), 0 0 28px rgba(6, 182, 212, 0.12), 0 28px 60px rgba(0, 0, 0, 0.40);
+      }
+
+      #submit.legendary .btnLabel {
+        position: relative;
+        z-index: 3;
+        text-shadow: 0 0 18px rgba(251, 191, 36, 0.22), 0 0 26px rgba(6, 182, 212, 0.16);
+      }
+
+      #submit.legendary::before {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        z-index: 1;
+        pointer-events: none;
+        background: conic-gradient(
+          from 0deg,
+          rgba(251, 191, 36, 0.00),
+          rgba(251, 191, 36, 0.42),
+          rgba(6, 182, 212, 0.32),
+          rgba(168, 85, 247, 0.34),
+          rgba(236, 72, 153, 0.22),
+          rgba(251, 191, 36, 0.00)
+        );
+        filter: blur(12px);
+        opacity: 0.50;
+        animation: legendarySpin 3.8s linear infinite;
+      }
+
+      #submit.legendary::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        mix-blend-mode: screen;
+        opacity: 0.90;
+        background:
+          linear-gradient(115deg, transparent 0%, rgba(248, 250, 252, 0.14) 46%, transparent 62%),
+          radial-gradient(240px 140px at 18% 30%, rgba(251, 191, 36, 0.22), transparent 70%),
+          radial-gradient(260px 160px at 80% 55%, rgba(168, 85, 247, 0.14), transparent 70%);
+        transform: translateX(-60%);
+        animation: legendarySheen 2.6s ease-in-out infinite;
+      }
+
+      #submit.legendary:hover {
+        border-color: rgba(251, 191, 36, 0.92);
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.14), 0 0 40px rgba(6, 182, 212, 0.14), 0 34px 80px rgba(0, 0, 0, 0.44);
+      }
+
+      #submit.legendary:active {
+        transform: translateY(0px);
+      }
+
+      #submit.legendary:disabled {
+        opacity: 0.60;
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.08), 0 0 18px rgba(6, 182, 212, 0.08), 0 22px 50px rgba(0, 0, 0, 0.34);
+      }
+
+      @keyframes legendarySpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      @keyframes legendarySheen {
+        0% { transform: translateX(-70%); }
+        50% { transform: translateX(8%); }
+        100% { transform: translateX(70%); }
+      }
+
+      .status {
+        padding: 12px 12px;
+        background: rgba(2, 6, 23, 0.48);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 12px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: rgba(226, 232, 240, 0.86);
+      }
+
+      .progress {
+        margin-top: 10px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.14);
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+      }
+
+      .bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, rgba(6, 182, 212, 0.92), rgba(168, 85, 247, 0.92));
+        transition: width 0.2s ease;
+      }
+
+      .holo {
+        margin-top: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(2, 6, 23, 0.55);
+        overflow: hidden;
+        position: relative;
+        min-height: 220px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .holo img { max-width: 100%; max-height: 520px; display: block; border-radius: 10px; }
+
+      .holo::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          180deg,
+          rgba(226, 232, 240, 0.05) 0px,
+          rgba(226, 232, 240, 0.05) 1px,
+          transparent 3px,
+          transparent 5px
+        );
+        opacity: 0.22;
+      }
+
+      .scan {
+        position: absolute;
+        inset: -40px 0 auto;
+        height: 60px;
+        background: linear-gradient(180deg, transparent, rgba(6, 182, 212, 0.16), transparent);
+        opacity: 0;
+        transform: translateY(0);
+      }
+
+      .isProcessing .scan {
+        opacity: 1;
+        animation: scan 1.4s linear infinite;
+      }
+
+      @keyframes scan {
+        0% { transform: translateY(-20px); }
+        100% { transform: translateY(340px); }
+      }
+
+      .corner {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(6, 182, 212, 0.55);
+        opacity: 0.65;
+      }
+
+      .tl { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+      .tr { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
+      .bl { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
+      .br { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+
+      .outMeta {
+        margin-top: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .kv {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(2, 6, 23, 0.42);
+        font-size: 12px;
+      }
+
+      .kv .k { color: rgba(148, 163, 184, 0.82); font-family: var(--mono); }
+      .kv .v { color: rgba(226, 232, 240, 0.90); font-family: var(--mono); overflow-wrap: anywhere; text-align: right; }
+
+      .linkBtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(6, 182, 212, 0.26);
+        background: rgba(6, 182, 212, 0.10);
+        color: rgba(226, 232, 240, 0.92);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-decoration: none;
+      }
+
+      .linkBtn:hover {
+        border-color: rgba(6, 182, 212, 0.60);
+        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.10);
+      }
+
+      .dropZoneActive input {
+        border-color: rgba(251, 191, 36, 0.65);
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.10);
+      }
+
+      .queueCols {
+        margin-top: 10px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .queueList {
+        display: grid;
+        gap: 8px;
+      }
+
+      .queueItem {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(2, 6, 23, 0.38);
+      }
+
+      .thumb {
+        width: 74px;
+        height: 74px;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(2, 6, 23, 0.55);
+        object-fit: cover;
+        flex: 0 0 auto;
+      }
+
+      .thumb.small {
+        width: 64px;
+        height: 64px;
+      }
+
+      .queueText { flex: 1 1 auto; min-width: 0; }
+
+      .queuePrimary {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(226, 232, 240, 0.90);
+        overflow-wrap: anywhere;
+      }
+
+      .queueSecondary {
+        margin-top: 4px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: rgba(148, 163, 184, 0.82);
+        overflow-wrap: anywhere;
+      }
+
+      .presetGrid {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      .presetCard {
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(2, 6, 23, 0.38);
+        padding: 10px 10px;
+        cursor: pointer;
+      }
+
+      .presetCard:hover {
+        border-color: rgba(6, 182, 212, 0.45);
+        box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.10);
+      }
+
+      .presetName {
+        margin-top: 8px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(226, 232, 240, 0.88);
+        overflow-wrap: anywhere;
+      }
+
+      .nodesGrid {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 10px;
+      }
+
+      .nodeCard {
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(2, 6, 23, 0.38);
+        padding: 10px 10px;
+      }
+
+      .nodeHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .nodeTitle {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: rgba(226, 232, 240, 0.92);
+        overflow-wrap: anywhere;
+      }
+
+      .nodeTitle .dot { width: 10px; height: 10px; }
+
+      .nodeRight {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(148, 163, 184, 0.88);
+        text-align: right;
+      }
+
+      .nodeMeta {
+        margin-top: 8px;
+        display: grid;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: rgba(226, 232, 240, 0.86);
+      }
+
+      .nodeMetaLine {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .nodeMetaLine .k { color: rgba(148, 163, 184, 0.82); }
+      .nodeMetaLine .v { color: rgba(226, 232, 240, 0.90); text-align: right; overflow-wrap: anywhere; }
+
+      .nodeControls {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .nodeControls input { margin-top: 0; }
+
+      /* Prompt Helper button */
+      .prompt-helper-btn {
+        padding: 4px 8px;
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 4px;
+        color: rgb(147, 197, 253);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-left: auto;
+        margin-right: 8px;
+      }
+      .prompt-helper-btn:hover {
+        background: rgba(59, 130, 246, 0.25);
+        border-color: rgba(59, 130, 246, 0.5);
+        color: rgb(191, 219, 254);
+      }
+
+      /* Prompt Helper Modal */
+      .prompt-helper-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        overflow-y: auto;
+        padding: 40px 20px;
+      }
+      .prompt-helper-modal.visible {
+        display: block;
+      }
+      .prompt-helper-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: rgba(2, 6, 23, 0.95);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 8px;
+        padding: 24px;
+      }
+      .prompt-helper-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      .prompt-helper-title {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 18px;
+        color: rgb(147, 197, 253);
+      }
+      .prompt-helper-close {
+        width: 32px;
+        height: 32px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+      .prompt-helper-close:hover {
+        background: rgba(239, 68, 68, 0.25);
+        border-color: rgba(239, 68, 68, 0.5);
+      }
+      .prompt-helper-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .prompt-helper-tab {
+        padding: 8px 16px;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 4px;
+        color: rgb(147, 197, 253);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+      }
+      .prompt-helper-tab.active {
+        background: rgba(59, 130, 246, 0.3);
+        border-color: rgba(59, 130, 246, 0.5);
+        color: rgb(191, 219, 254);
+      }
+      .prompt-helper-content {
+        min-height: 400px;
+      }
+      .prompt-template {
+        background: rgba(2, 6, 23, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .prompt-template:hover {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+      .prompt-template-name {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        color: rgb(147, 197, 253);
+        margin-bottom: 4px;
+      }
+      .prompt-template-text {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: rgba(148, 163, 184, 0.9);
+        margin-bottom: 8px;
+      }
+      .prompt-template-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .prompt-template-tag {
+        padding: 2px 6px;
+        background: rgba(139, 92, 246, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 3px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        color: rgba(196, 181, 253, 0.9);
+      }
+      .prompt-builder-section {
+        margin-bottom: 20px;
+      }
+      .prompt-builder-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: rgba(148, 163, 184, 0.9);
+        margin-bottom: 8px;
+      }
+      .prompt-builder-input {
+        width: 100%;
+        padding: 8px 12px;
+        background: rgba(2, 6, 23, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 4px;
+        color: rgb(241, 245, 249);
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+      }
+      .prompt-builder-preview {
+        background: rgba(2, 6, 23, 0.8);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 6px;
+        padding: 12px;
+        min-height: 80px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        color: rgb(241, 245, 249);
+        white-space: pre-wrap;
+      }
+      .prompt-insert-btn {
+        padding: 8px 16px;
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 4px;
+        color: rgb(134, 239, 172);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        margin-top: 12px;
+      }
+      .prompt-insert-btn:hover {
+        background: rgba(34, 197, 94, 0.25);
+        border-color: rgba(34, 197, 94, 0.5);
+      }
+
+      /* Quicklook Preview */
+      .quicklook {
+        position: fixed;
+        z-index: 1000;
+        pointer-events: none;
+        background: rgba(2, 6, 23, 0.96);
+        border: 1px solid rgba(6, 182, 212, 0.4);
+        border-radius: 12px;
+        padding: 8px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 32px rgba(6, 182, 212, 0.2);
+        max-width: 400px;
+        max-height: 400px;
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .quicklook.visible {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+
+      .quicklook img {
+        display: block;
+        max-width: 100%;
+        max-height: 384px;
+        border-radius: 8px;
+      }
+
+      /* Details Modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .modal-overlay.visible {
+        display: flex;
+      }
+
+      .modal {
+        background: linear-gradient(135deg, rgba(17, 24, 39, 0.98), rgba(2, 6, 23, 0.98));
+        border: 1px solid rgba(6, 182, 212, 0.3);
+        border-radius: 16px;
+        max-width: 90vw;
+        max-height: 90vh;
+        width: 800px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 48px rgba(6, 182, 212, 0.15);
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(2, 6, 23, 0.4);
+      }
+
+      .modal-title {
+        font-family: var(--font);
+        font-size: 16px;
+        font-weight: 600;
+        color: rgba(226, 232, 240, 0.95);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .modal-close {
+        background: rgba(148, 163, 184, 0.1);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: rgba(226, 232, 240, 0.8);
+        font-size: 20px;
+        transition: all 0.2s ease;
+      }
+
+      .modal-close:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.4);
+        color: rgba(248, 113, 113, 0.95);
+      }
+
+      .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: grid;
+        gap: 20px;
+      }
+
+      .modal-image-container {
+        background: rgba(2, 6, 23, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .modal-image {
+        max-width: 100%;
+        max-height: 80vh;
+        cursor: zoom-in;
+        transition: transform 0.2s ease;
+        transform-origin: center center;
+      }
+      .modal-image.zoomed {
+        cursor: zoom-out;
+      }
+      .modal-image[data-zoom-level="2"] {
+        transform: scale(2);
+      }
+      .modal-image[data-zoom-level="3"] {
+        transform: scale(3);
+      }
+      .modal-image[data-zoom-level="4"] {
+        transform: scale(4);
+      }
+      .modal-image[data-zoom-level="5"] {
+        transform: scale(5);
+      }
+      .modal-image[data-zoom-level="6"] {
+        transform: scale(6);
+      }
+      .modal-image[data-zoom-level="8"] {
+        transform: scale(8);
+      }
+      .modal-image[data-zoom-level="10"] {
+        transform: scale(10);
+      }
+
+      .modal-metadata {
+        display: grid;
+        gap: 12px;
+      }
+
+      .modal-metadata-group {
+        background: rgba(2, 6, 23, 0.4);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      .modal-metadata-title {
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(6, 182, 212, 0.9);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+      }
+
+      .modal-metadata-items {
+        display: grid;
+        gap: 8px;
+      }
+
+      .modal-metadata-item {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .modal-metadata-key {
+        color: rgba(148, 163, 184, 0.85);
+      }
+
+      .modal-metadata-value {
+        color: rgba(226, 232, 240, 0.9);
+        text-align: right;
+        overflow-wrap: anywhere;
+      }
+
+      .modal-actions {
+        padding: 16px 20px;
+        border-top: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(2, 6, 23, 0.4);
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .modal-action {
+        flex: 1;
+        min-width: 120px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+        background: rgba(6, 182, 212, 0.08);
+        color: rgba(226, 232, 240, 0.92);
+        font-family: var(--mono);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+      }
+
+      .modal-action:hover {
+        background: rgba(6, 182, 212, 0.18);
+        border-color: rgba(6, 182, 212, 0.5);
+        transform: translateY(-1px);
+      }
+
+      .modal-action.primary {
+        background: rgba(168, 85, 247, 0.15);
+        border-color: rgba(168, 85, 247, 0.35);
+      }
+
+      .modal-action.primary:hover {
+        background: rgba(168, 85, 247, 0.25);
+        border-color: rgba(168, 85, 247, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="hud panel">
+        <div class="brand">
+          <div class="kicker">HAPA // GEN</div>
+          <div class="title">MEDIA NODE <span class="accent">FORGE</span></div>
+        </div>
+        <div class="hudRight">
+          <div class="chip" id="chipHealth"><span class="dot" id="dotHealth"></span><span id="healthText">offline</span></div>
+          <div class="chip" id="chipCaps"><span class="dot" id="dotCaps"></span><span id="capsText">capabilities unknown</span></div>
+          <button id="connect" type="button">Connect</button>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="panel">
+          <div class="panelHeader">
+            <div class="panelTitle">Ritual Inputs</div>
+            <div class="panelMeta" id="capsSummary">awaiting token</div>
+          </div>
+          <div class="content">
+            <div class="field">
+              <label for="token">Token <span class="summaryRight">Authorization: Bearer</span></label>
+              <input id="token" type="password" placeholder="Bearer token" autocomplete="current-password" />
+            </div>
+
+            <div class="panel-header">
+              <span>Prompt</span>
+              <button class="prompt-helper-btn" id="promptHelperBtn" title="Prompt Helper (Shift+P)">
+                <span style="font-family: 'JetBrains Mono'; font-size: 10px;">✨ HELPER</span>
+              </button>
+              <div class="input-status" id="promptStatus"></div>
+            </div>
+            <textarea
+              id="prompt"
+              placeholder="describe the image you want to generate..."
+              tabindex="1"
+            ></textarea>
+
+            <details class="section" open>
+              <summary>Core Parameters <span class="summaryRight" id="coreHint"></span></summary>
+
+              <div class="field">
+                <label for="negative_prompt">Negative Prompt</label>
+                <textarea id="negative_prompt" placeholder="What to avoid..."></textarea>
+              </div>
+
+              <div class="field">
+                <label for="mode">Mode</label>
+                <select id="mode">
+                  <option value="txt2img">txt2img</option>
+                  <option value="img2img">img2img</option>
+                  <option value="fill">fill</option>
+                  <option value="depth">depth</option>
+                  <option value="controlnet">controlnet</option>
+                  <option value="redux">redux</option>
+                  <option value="upscale">upscale</option>
+                </select>
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="model">Model</label>
+                  <select id="model">
+                    <option value="schnell">schnell</option>
+                    <option value="dev">dev</option>
+                    <option value="krea-dev">krea-dev</option>
+                    <option value="z-image-turbo">z-image-turbo</option>
+                    <option value="fibo">fibo</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="base_model">Base Model</label>
+                  <select id="base_model">
+                    <option value="">(none)</option>
+                    <option value="schnell">schnell</option>
+                    <option value="dev">dev</option>
+                    <option value="krea-dev">krea-dev</option>
+                  </select>
+                  <div class="hint" id="baseModelHint">Required only for third-party models/paths</div>
+                </div>
+              </div>
+            </details>
+
+            <details class="section">
+              <summary>Attachments <span class="summaryRight" id="attachHint">mode-gated</span></summary>
+
+              <div class="row2">
+                <div class="field" id="field_image_file">
+                  <label for="image_file">Image File <span class="summaryRight" id="hint_image_file"></span></label>
+                  <input id="image_file" type="file" accept="image/*" />
+                </div>
+                <div class="field" id="field_masked_image_file">
+                  <label for="masked_image_file">Masked Image File <span class="summaryRight" id="hint_masked_image_file"></span></label>
+                  <input id="masked_image_file" type="file" accept="image/*" />
+                </div>
+              </div>
+
+              <div class="row2">
+                <div class="field" id="field_depth_image_file">
+                  <label for="depth_image_file">Depth Image File <span class="summaryRight" id="hint_depth_image_file"></span></label>
+                  <input id="depth_image_file" type="file" accept="image/*" />
+                </div>
+                <div class="field" id="field_controlnet_image_file">
+                  <label for="controlnet_image_file">ControlNet Image File <span class="summaryRight" id="hint_controlnet_image_file"></span></label>
+                  <input id="controlnet_image_file" type="file" accept="image/*" />
+                </div>
+              </div>
+
+              <div class="field" id="field_redux_image_files">
+                <label for="redux_image_files">Redux Image Files <span class="summaryRight" id="hint_redux_image_files"></span></label>
+                <input id="redux_image_files" type="file" accept="image/*" multiple />
+              </div>
+
+              <div class="row2">
+                <div class="field" id="field_image_strength">
+                  <label for="image_strength">Image Strength</label>
+                  <input id="image_strength" type="number" step="0.05" min="0" max="1" placeholder="(default)" />
+                </div>
+                <div class="field" id="field_controlnet_strength">
+                  <label for="controlnet_strength">ControlNet Strength</label>
+                  <input id="controlnet_strength" type="number" step="0.05" min="0" max="1" placeholder="(default)" />
+                </div>
+              </div>
+
+              <div class="field" id="field_redux_image_strengths">
+                <label for="redux_image_strengths">Redux Image Strengths</label>
+                <input id="redux_image_strengths" type="text" placeholder="(e.g. 1.0,0.8)" />
+              </div>
+            </details>
+
+            <details class="section">
+              <summary>Advanced Controls <span class="summaryRight">precision</span></summary>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="steps">Steps</label>
+                  <input id="steps" type="number" min="1" placeholder="(auto)" />
+                </div>
+                <div class="field">
+                  <label for="seed">Seed</label>
+                  <input id="seed" type="number" placeholder="(random)" />
+                </div>
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="width">Width</label>
+                  <input id="width" type="number" min="256" placeholder="(auto)" />
+                </div>
+                <div class="field">
+                  <label for="height">Height</label>
+                  <input id="height" type="number" min="256" placeholder="(auto)" />
+                </div>
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="quantize">Quantize</label>
+                  <select id="quantize">
+                    <option value="8">8</option>
+                    <option value="6">6</option>
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="guidance">Guidance</label>
+                  <input id="guidance" type="number" step="0.1" placeholder="(auto for dev/krea-dev)" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="low_ram">Low RAM</label>
+                <select id="low_ram">
+                  <option value="0">off</option>
+                  <option value="1">on</option>
+                </select>
+              </div>
+            </details>
+
+            <details class="section">
+              <summary>LoRA <span class="summaryRight">optional</span></summary>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="lora_style">LoRA Style</label>
+                  <input id="lora_style" type="text" placeholder="(optional, e.g. storyboard)" />
+                </div>
+                <div class="field">
+                  <label for="lora_scales">LoRA Scales</label>
+                  <input id="lora_scales" type="text" placeholder="(optional, e.g. 1.0 or 0.8,1.2)" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="lora_paths">LoRA Paths</label>
+                <textarea id="lora_paths" placeholder="Local file path or HF repo (org/model) or collection (org/model:filename.safetensors)"></textarea>
+              </div>
+            </details>
+
+            <div class="actions">
+              <button id="submit" class="primary legendary" type="button" title="Cmd/Ctrl+Enter"><span class="btnLabel">Manifest</span></button>
+              <button id="reset" type="button">Clear Output</button>
+
+              <div class="field">
+                <label for="copies">Copies</label>
+                <input id="copies" type="number" min="1" max="32" step="1" value="2" />
+              </div>
+              <button id="queue" class="primary" type="button" title="Queue N tasks without waiting">Queue</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="outputPanel">
+          <div class="panelHeader">
+            <div class="panelTitle">Telemetry</div>
+            <div class="panelMeta" id="serverMeta">/</div>
+          </div>
+          <div class="content">
+            <div class="status" id="status" aria-live="polite"></div>
+            <div class="progress"><div class="bar" id="progressBar"></div></div>
+
+            <div class="holo" id="holo">
+              <div class="corner tl"></div>
+              <div class="corner tr"></div>
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+              <div class="scan" id="scan"></div>
+              <img id="result" alt="" />
+            </div>
+
+            <div class="outMeta">
+              <div class="kv"><div class="k">task_id</div><div class="v" id="task_id">-</div></div>
+              <div class="kv"><div class="k">asset_id</div><div class="v" id="asset_id">-</div></div>
+              <div class="kv"><div class="k">mem</div><div class="v" id="memSummary">-</div></div>
+              <div class="kv"><div class="k">nodes</div><div class="v" id="nodesMemSummary">-</div></div>
+              <div class="kv"><div class="k">cpu</div><div class="v" id="cpuSummary">-</div></div>
+              <div class="kv"><div class="k">nodes cpu</div><div class="v" id="nodesCpuSummary">-</div></div>
+              <div class="kv"><div class="k">nodes workers</div><div class="v" id="nodesWorkersSummary">-</div></div>
+              <a class="linkBtn" id="openResult" href="#" target="_blank" rel="noreferrer" style="visibility:hidden">open result</a>
+              <div class="kv"><div class="k">copy</div><div class="v"><label class="check"><input id="copyIncludeAttachments" type="checkbox" /> include base64</label></div></div>
+              <button id="copyRequest" type="button">Copy Request JSON</button>
+              <button id="savePreset" type="button">Save Preset</button>
+            </div>
+
+            <details class="section" open>
+              <summary>Nodes <span class="summaryRight" id="nodesSummary">-</span></summary>
+              <div class="hint" id="nodesHint">Connect to view nodes</div>
+              <div class="nodesGrid" id="nodesGrid"></div>
+
+              <div class="hint" id="localProcessesHint"></div>
+              <div class="nodesGrid" id="localProcessesGrid"></div>
+
+              <div class="hint" id="nodesAdminHint"></div>
+
+              <div class="row2">
+                <button id="adminSelfTest" class="primary" type="button">Run Self-Test</button>
+                <button id="adminCopySelfTest" type="button">Copy Self-Test JSON</button>
+              </div>
+
+              <div class="field">
+                <label for="adminSelfTestOutput">Self-Test JSON</label>
+                <textarea id="adminSelfTestOutput" readonly placeholder="(run self-test to populate)"></textarea>
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="adminNodeId">Node ID</label>
+                  <input id="adminNodeId" type="text" placeholder="node3" />
+                </div>
+                <div class="field">
+                  <label for="adminNodeUrl">Base URL</label>
+                  <input id="adminNodeUrl" type="text" placeholder="http://127.0.0.1:8726" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="adminNodeToken">Node Token</label>
+                <input id="adminNodeToken" type="password" placeholder="(defaults to current token)" />
+              </div>
+
+              <div class="row2">
+                <button id="adminAddNode" class="primary" type="button">Add Node</button>
+                <button id="adminClearNodeForm" type="button">Clear</button>
+              </div>
+
+              <div class="row2">
+                <div class="field">
+                  <label for="adminSpawnNodeId">Spawn Node ID</label>
+                  <input id="adminSpawnNodeId" type="text" placeholder="(auto)" />
+                </div>
+                <div class="field">
+                  <label for="adminSpawnMaxWorkers">Spawn Max Workers</label>
+                  <input id="adminSpawnMaxWorkers" type="number" min="1" step="1" placeholder="(optional)" />
+                </div>
+              </div>
+
+              <div class="row2">
+                <button id="adminSpawnNode" class="primary" type="button">Spawn Local Node</button>
+                <button id="adminClearSpawnForm" type="button">Clear Spawn</button>
+              </div>
+            </details>
+
+            <details class="section" open>
+              <summary>Queue <span class="summaryRight" id="queueSummary">-</span></summary>
+              <div class="hint" id="queueHint">Connect to view queue</div>
+              <div class="queueCols">
+                <div>
+                  <div class="hint">Running</div>
+                  <div class="queueList" id="queueRunning"></div>
+                </div>
+                <div>
+                  <div class="hint">Queued</div>
+                  <div class="queueList" id="queueQueued"></div>
+                </div>
+                <div>
+                  <div class="hint">Recent (drag thumbnails into inputs)</div>
+                  <div class="queueList" id="queueRecent"></div>
+                </div>
+              </div>
+            </details>
+
+            <details class="section">
+              <summary>Presets <span class="summaryRight" id="presetsSummary">-</span></summary>
+              <div class="presetGrid" id="presetsGrid"></div>
+            </details>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Quicklook Preview -->
+    <div class="quicklook" id="quicklook">
+      <img id="quicklookImage" alt="" />
+    </div>
+
+    <!-- Prompt Helper Modal -->
+    <div class="prompt-helper-modal" id="promptHelperModal">
+      <div class="prompt-helper-container">
+        <div class="prompt-helper-header">
+          <div class="prompt-helper-title">✨ PROMPT DESIGN FORGE</div>
+          <button class="prompt-helper-close" id="promptHelperClose">✕</button>
+        </div>
+
+        <div class="prompt-helper-tabs">
+          <button class="prompt-helper-tab active" data-tab="templates">Templates</button>
+          <button class="prompt-helper-tab" data-tab="builder">Builder</button>
+          <button class="prompt-helper-tab" data-tab="benchmarks">Benchmarks</button>
+          <button class="prompt-helper-tab" data-tab="philosophy">Hapa Style</button>
+        </div>
+
+        <div class="prompt-helper-content" id="promptHelperContent">
+          <!-- Content will be dynamically rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span>Asset Details</span>
+            <span id="modalAssetId" style="font-family: var(--mono); font-size: 12px; opacity: 0.7;"></span>
+          </div>
+          <button class="modal-close" id="modalClose" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-image-container">
+            <img class="modal-image" id="modalImage" alt="" />
+          </div>
+          <div class="modal-metadata" id="modalMetadata"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-action primary" id="modalDownload">Download</button>
+          <button class="modal-action" id="modalOpenTab">Open in Tab</button>
+          <button class="modal-action" id="modalCopyAssetId">Copy Asset ID</button>
+          <button class="modal-action" id="modalCopyTaskId">Copy Task ID</button>
+          <button class="modal-action" id="modalLoadIntoRun">Load Into Run</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const _state = {
+        caps: null,
+        health: null,
+        lastObjectUrl: null,
+        lastSystem: null,
+        lastLocalProcesses: null,
+        localProcessesError: '',
+        lastSelfTest: null,
+        selfTestError: '',
+        lastQueue: null,
+        pollSeq: 0,
+        token: '',
+        lastAssetId: '',
+        liveInterval: null,
+        liveTick: 0,
+        queueSeq: 0,
+        presetsSeq: 0,
+        systemSeq: 0,
+        queueInFlight: false,
+        presetsInFlight: false,
+        systemInFlight: false,
+        queueThumbAssetIds: [],
+        presetThumbAssetIds: [],
+        dragAssetId: '',
+        assetInputs: {
+          image_asset_id: '',
+          masked_image_asset_id: '',
+          depth_image_asset_id: '',
+          controlnet_image_asset_id: '',
+          redux_image_asset_ids: [],
+        },
+        assetUrlCache: {},
+        currentModalAssetId: '',
+        currentModalTaskId: '',
+        currentModalRequest: null,
+        quicklookTimeout: null,
+        lastTaskId: '',
+        lastRequest: null,
+      };
+
+      const _devTokenKey = 'hapa_media_node_dev_token_v1';
+
+      function normalizeToken(raw) {
+        let t = String(raw || '').trim();
+        if (!t) return '';
+        const m = t.match(/^bearer\s+(.+)$/i);
+        if (m) t = String(m[1] || '').trim();
+        return t;
+      }
+
+      function isLocalDevHost() {
+        const h = String(location.hostname || '');
+        return h === 'localhost' || h === '127.0.0.1' || h === '::1';
+      }
+
+      function loadDevToken() {
+        if (!isLocalDevHost()) return '';
+        try {
+          return normalizeToken(localStorage.getItem(_devTokenKey) || '');
+        } catch (e) {
+          return '';
+        }
+      }
+
+      async function refreshSystem(token) {
+        const t = String(token || '').trim();
+        if (!t) return;
+        if (_state.systemInFlight) return;
+
+        _state.systemInFlight = true;
+        const seq = _state.systemSeq + 1;
+        _state.systemSeq = seq;
+
+        try {
+          const sys = await apiFetch('/v1/system', t, { method: 'GET' });
+          if (seq !== _state.systemSeq) return;
+
+          _state.lastSystem = sys;
+
+          const mem = sys && sys.memory ? sys.memory : {};
+          const total = mem && mem.total_bytes ? Number(mem.total_bytes) : 0;
+          const used = mem && (mem.tree_rss_bytes || mem.rss_bytes) ? Number(mem.tree_rss_bytes || mem.rss_bytes) : 0;
+
+          el('memSummary').textContent = formatMemLine(used, total);
+
+          const cpu = sys && sys.cpu ? sys.cpu : {};
+          const hubCpu = cpu && (cpu.tree_pcpu || cpu.pcpu) ? Number(cpu.tree_pcpu || cpu.pcpu) : null;
+          el('cpuSummary').textContent = formatPcpu(hubCpu);
+
+          const nodes = sys && sys.nodes ? sys.nodes : null;
+          if (nodes && typeof nodes === 'object') {
+            const parts = [];
+            const cpuParts = [];
+            const workerParts = [];
+            for (const [nodeId, rec] of Object.entries(nodes)) {
+              const r = rec || {};
+              if (!r.ok) {
+                parts.push(String(nodeId) + ': down');
+                cpuParts.push(String(nodeId) + ': down');
+                workerParts.push(String(nodeId) + ': down');
+                continue;
+              }
+
+              const enabled = r.enabled === undefined ? true : Boolean(r.enabled);
+              const nm = r.memory || {};
+              const ntotal = nm && nm.total_bytes ? Number(nm.total_bytes) : total;
+              const nused = nm && (nm.tree_rss_bytes || nm.rss_bytes) ? Number(nm.tree_rss_bytes || nm.rss_bytes) : 0;
+              parts.push(String(nodeId) + ': ' + formatMemLine(nused, ntotal) + (enabled ? '' : ' (disabled)'));
+
+              const ncpu = r.cpu || {};
+              const np = ncpu && (ncpu.tree_pcpu || ncpu.pcpu) ? Number(ncpu.tree_pcpu || ncpu.pcpu) : null;
+              cpuParts.push(String(nodeId) + ': ' + formatPcpu(np) + (enabled ? '' : ' (disabled)'));
+
+              const w = r.workers || {};
+              const wMax = w && w.max_workers !== undefined ? Number(w.max_workers) : null;
+              const wAct = w && w.active_workers !== undefined ? Number(w.active_workers) : null;
+              let wText = '-';
+              if (Number.isFinite(wAct) && Number.isFinite(wMax)) {
+                wText = String(wAct) + '/' + String(wMax);
+              } else if (Number.isFinite(wMax)) {
+                wText = String(wMax);
+              }
+              workerParts.push(String(nodeId) + ': ' + wText + (enabled ? '' : ' (disabled)'));
+            }
+            el('nodesMemSummary').textContent = parts.length ? parts.join(' · ') : '-';
+            el('nodesCpuSummary').textContent = cpuParts.length ? cpuParts.join(' · ') : '-';
+            el('nodesWorkersSummary').textContent = workerParts.length ? workerParts.join(' · ') : '-';
+          } else {
+            el('nodesMemSummary').textContent = '-';
+            el('nodesCpuSummary').textContent = '-';
+            el('nodesWorkersSummary').textContent = '-';
+          }
+
+          renderNodesPanel();
+
+          try {
+            const procs = await apiFetch('/v1/admin/processes/local', t, { method: 'GET' });
+            if (seq !== _state.systemSeq) return;
+            _state.lastLocalProcesses = procs;
+            _state.localProcessesError = '';
+          } catch (err2) {
+            if (seq !== _state.systemSeq) return;
+            const msg = err2 && err2.message ? err2.message : String(err2);
+            _state.localProcessesError = msg || 'Failed to fetch local processes';
+          }
+
+          renderNodesPanel();
+        } catch (err) {
+          el('memSummary').textContent = 'error';
+          el('nodesMemSummary').textContent = '-';
+          el('cpuSummary').textContent = 'error';
+          el('nodesCpuSummary').textContent = '-';
+          el('nodesWorkersSummary').textContent = '-';
+          _state.lastSystem = null;
+          _state.lastLocalProcesses = null;
+          _state.localProcessesError = '';
+          renderNodesPanel();
+        } finally {
+          _state.systemInFlight = false;
+        }
+      }
+
+      function saveDevToken(token) {
+        if (!isLocalDevHost()) return;
+        try {
+          const t = normalizeToken(token);
+          if (!t) {
+            localStorage.removeItem(_devTokenKey);
+          } else {
+            localStorage.setItem(_devTokenKey, t);
+          }
+        } catch (e) {}
+      }
+
+      function el(id) {
+        return document.getElementById(id);
+      }
+
+      function setDot(dotEl, mode) {
+        dotEl.classList.remove('ok');
+        dotEl.classList.remove('bad');
+        if (mode === 'ok') dotEl.classList.add('ok');
+        if (mode === 'bad') dotEl.classList.add('bad');
+      }
+
+      function setProcessing(on) {
+        if (on) {
+          document.body.classList.add('isProcessing');
+        } else {
+          document.body.classList.remove('isProcessing');
+        }
+      }
+
+      function setStatus(text, progress) {
+        el('status').textContent = text;
+        const pct = Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0;
+        el('progressBar').style.width = Math.round(pct * 100) + '%';
+      }
+
+      function safeJson(text) {
+        try {
+          return text ? JSON.parse(text) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function getValue(id) {
+        return String(el(id).value || '');
+      }
+
+      function getNumber(id) {
+        const v = getValue(id).trim();
+        if (!v) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      function getLines(id) {
+        const v = getValue(id);
+        return v
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+
+      function getCommaNumbers(id) {
+        const v = getValue(id).trim();
+        if (!v) return null;
+        const parts = v
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (!parts.length) return null;
+        const nums = parts.map((p) => Number(p));
+        if (nums.some((n) => !Number.isFinite(n))) return null;
+        return nums;
+      }
+
+      function getFile(id) {
+        const input = el(id);
+        if (!input || !input.files || !input.files.length) return null;
+        return input.files[0];
+      }
+
+      function getFiles(id) {
+        const input = el(id);
+        if (!input || !input.files || !input.files.length) return [];
+        return Array.from(input.files);
+      }
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error('File read failed'));
+          reader.onload = () => {
+            const result = String(reader.result || '');
+            const comma = result.indexOf(',');
+            if (comma >= 0) return resolve(result.slice(comma + 1));
+            resolve(result);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function apiFetch(path, token, options) {
+        const opts = options || {};
+        opts.headers = Object.assign({}, opts.headers || {}, {
+          Authorization: 'Bearer ' + token,
+        });
+        const res = await fetch(path, opts);
+        const text = await res.text();
+        const data = safeJson(text);
+        if (!res.ok) {
+          const msg = data && data.detail ? data.detail : text;
+          throw new Error(msg || 'HTTP ' + res.status);
+        }
+        return data;
+      }
+
+      async function copyText(text) {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          try {
+            await navigator.clipboard.writeText(text);
+            return;
+          } catch (e) {}
+        }
+
+        const ta = document.createElement('textarea');
+        ta.value = String(text || '');
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (!ok) throw new Error('Clipboard copy failed');
+      }
+
+      async function buildRequestPayload(includeBase64) {
+        const prompt = getValue('prompt').trim();
+        const negativePrompt = getValue('negative_prompt').trim() || null;
+        const mode = getValue('mode').trim();
+        const model = getValue('model').trim();
+        const baseModel = getValue('base_model').trim() || null;
+
+        const loraStyle = getValue('lora_style').trim() || null;
+        const loraPaths = getLines('lora_paths');
+        const loraScalesRaw = getValue('lora_scales').trim();
+        const loraScales = getCommaNumbers('lora_scales');
+        if (loraScalesRaw && !loraScales) throw new Error('Invalid LoRA scales');
+        if (loraScalesRaw && !loraPaths.length) throw new Error('LoRA paths required when scales are provided');
+
+        const reduxStrengthsRaw = getValue('redux_image_strengths').trim();
+        const reduxStrengths = getCommaNumbers('redux_image_strengths');
+        if (reduxStrengthsRaw && !reduxStrengths) throw new Error('Invalid redux image strengths');
+
+        if (!prompt) throw new Error('Prompt required');
+
+        const builtin = new Set(['schnell', 'dev', 'krea-dev', 'fibo', 'z-image-turbo']);
+        if (model && !builtin.has(model) && !baseModel) {
+          throw new Error('Base model required for third-party model');
+        }
+
+        const payload = {
+          mode,
+          prompt,
+          negative_prompt: negativePrompt,
+          model,
+          base_model: baseModel,
+          lora_style: loraStyle,
+          lora_paths: loraPaths.length ? loraPaths : null,
+          lora_scales: loraPaths.length ? loraScales : null,
+          steps: getNumber('steps'),
+          seed: getNumber('seed'),
+          width: getNumber('width'),
+          height: getNumber('height'),
+          quantize: getNumber('quantize'),
+          guidance: getNumber('guidance'),
+          low_ram: getValue('low_ram').trim() === '1',
+        };
+
+        payload.image_strength = getNumber('image_strength');
+        payload.controlnet_strength = getNumber('controlnet_strength');
+        payload.redux_image_strengths = reduxStrengths;
+
+        const inputs = modeInputsFor(mode);
+        const required = new Set((inputs.required || []).map(String));
+        const optional = new Set((inputs.optional || []).map(String));
+
+        const needsImage = required.has('image_base64') || optional.has('image_base64');
+        const needsMask = required.has('masked_image_base64') || optional.has('masked_image_base64');
+        const needsDepth = required.has('depth_image_base64') || optional.has('depth_image_base64') || mode === 'depth';
+        const needsCtrl = required.has('controlnet_image_base64') || optional.has('controlnet_image_base64');
+        const needsRedux = required.has('redux_images_base64') || optional.has('redux_images_base64');
+
+        if (includeBase64) {
+          const imageFile = needsImage ? getFile('image_file') : null;
+          const maskedFile = needsMask ? getFile('masked_image_file') : null;
+          const depthFile = needsDepth ? getFile('depth_image_file') : null;
+          const controlFile = needsCtrl ? getFile('controlnet_image_file') : null;
+          const reduxFiles = needsRedux ? getFiles('redux_image_files') : [];
+
+          if (imageFile) payload.image_base64 = await fileToBase64(imageFile);
+          if (maskedFile) payload.masked_image_base64 = await fileToBase64(maskedFile);
+          if (depthFile) payload.depth_image_base64 = await fileToBase64(depthFile);
+          if (controlFile) payload.controlnet_image_base64 = await fileToBase64(controlFile);
+          if (reduxFiles.length) {
+            payload.redux_images_base64 = [];
+            for (const f of reduxFiles) {
+              payload.redux_images_base64.push(await fileToBase64(f));
+            }
+          }
+        }
+
+        const assets = _state.assetInputs || {};
+
+        if (needsImage && !payload.image_base64 && assets.image_asset_id) {
+          payload.image_asset_id = String(assets.image_asset_id);
+        }
+        if (needsMask && !payload.masked_image_base64 && assets.masked_image_asset_id) {
+          payload.masked_image_asset_id = String(assets.masked_image_asset_id);
+        }
+        if (needsDepth && !payload.depth_image_base64 && assets.depth_image_asset_id) {
+          payload.depth_image_asset_id = String(assets.depth_image_asset_id);
+        }
+        if (needsCtrl && !payload.controlnet_image_base64 && assets.controlnet_image_asset_id) {
+          payload.controlnet_image_asset_id = String(assets.controlnet_image_asset_id);
+        }
+        if (
+          needsRedux &&
+          (!payload.redux_images_base64 || !payload.redux_images_base64.length) &&
+          Array.isArray(assets.redux_image_asset_ids) &&
+          assets.redux_image_asset_ids.length
+        ) {
+          payload.redux_image_asset_ids = assets.redux_image_asset_ids.map(String);
+        }
+
+        return payload;
+      }
+
+      function setSelectOptions(selectEl, values) {
+        const current = String(selectEl.value || '');
+        selectEl.innerHTML = '';
+        for (const v of values) {
+          const opt = document.createElement('option');
+          opt.value = String(v);
+          opt.textContent = String(v);
+          selectEl.appendChild(opt);
+        }
+        if (values.includes(current)) {
+          selectEl.value = current;
+        }
+      }
+
+      function setFieldVisible(fieldId, visible) {
+        const node = el(fieldId);
+        if (!node) return;
+        node.style.display = visible ? 'block' : 'none';
+      }
+
+      function modeInputsFor(mode) {
+        const caps = _state.caps || {};
+        const image = ((caps.modalities || {}).image || {});
+        const map = image.mode_inputs_base64 || null;
+        if (map && typeof map === 'object' && map[mode]) {
+          const entry = map[mode] || {};
+          const required = Array.isArray(entry.required) ? entry.required.map(String) : [];
+          const optional = Array.isArray(entry.optional) ? entry.optional.map(String) : [];
+          return { required, optional };
+        }
+
+        const fallback = {
+          txt2img: { required: [], optional: [] },
+          img2img: { required: ['image_base64'], optional: [] },
+          fill: { required: ['image_base64', 'masked_image_base64'], optional: [] },
+          depth: { required: ['image_base64'], optional: ['depth_image_base64'] },
+          controlnet: { required: ['controlnet_image_base64'], optional: [] },
+          redux: { required: ['redux_images_base64'], optional: [] },
+          upscale: { required: ['controlnet_image_base64'], optional: [] },
+        };
+        return fallback[mode] || fallback.txt2img;
+      }
+
+      const _assetIdRe = /^(?:[^:\s]+:)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      function shortId(value) {
+        const v = String(value || '').trim();
+        if (!v) return '';
+        if (v.length <= 8) return v;
+        return v.slice(0, 8);
+      }
+
+      function splitCompositeId(value) {
+        const v = String(value || '').trim();
+        if (!v) return [null, ''];
+        const i = v.indexOf(':');
+        if (i <= 0) return [null, v];
+        return [v.slice(0, i), v.slice(i + 1)];
+      }
+
+      function setNodesAdminHint(text) {
+        const h = el('nodesAdminHint');
+        if (!h) return;
+        h.textContent = String(text || '');
+      }
+
+      function renderNodesPanel() {
+        const grid = el('nodesGrid');
+        const hint = el('nodesHint');
+        const summary = el('nodesSummary');
+        const procGrid = el('localProcessesGrid');
+        const procHint = el('localProcessesHint');
+        if (!grid || !hint || !summary) return;
+
+        const sys = _state.lastSystem;
+        const nodes = sys && sys.nodes && typeof sys.nodes === 'object' ? sys.nodes : null;
+        if (!nodes) {
+          grid.innerHTML = '';
+          if (procGrid) procGrid.innerHTML = '';
+          if (procHint) procHint.textContent = '';
+          hint.textContent = 'Connect to view nodes';
+          summary.textContent = '-';
+          return;
+        }
+
+        const q = _state.lastQueue || {};
+        const running = Array.isArray(q.running) ? q.running : [];
+        const queued = Array.isArray(q.queued) ? q.queued : [];
+
+        const entries = Object.entries(nodes)
+          .map(([nodeId, rec]) => [String(nodeId), rec || {}])
+          .sort((a, b) => a[0].localeCompare(b[0]));
+
+        const totalCount = entries.length;
+        const upCount = entries.filter((e) => Boolean(e[1].ok)).length;
+        const enabledCount = entries.filter((e) => e[1].enabled === undefined ? true : Boolean(e[1].enabled)).length;
+
+        summary.textContent = String(upCount) + '/' + String(totalCount) + ' up · ' + String(enabledCount) + ' enabled';
+        hint.textContent = '';
+
+        grid.innerHTML = '';
+
+        for (const [nodeId, r] of entries) {
+          const ok = Boolean(r.ok);
+          const enabled = r.enabled === undefined ? true : Boolean(r.enabled);
+          const managed = Boolean(r.managed);
+          const managedState = r.managed_state ? String(r.managed_state) : '';
+          const pid = (r.pid === undefined || r.pid === null) ? '' : String(r.pid);
+          const managedText = managed ? ((managedState || 'managed') + (pid ? (' · pid ' + pid) : '')) : '-';
+
+          const card = document.createElement('div');
+          card.className = 'nodeCard';
+
+          const head = document.createElement('div');
+          head.className = 'nodeHeader';
+
+          const title = document.createElement('div');
+          title.className = 'nodeTitle';
+
+          const dot = document.createElement('span');
+          dot.className = 'dot';
+          setDot(dot, ok ? 'ok' : 'bad');
+
+          const name = document.createElement('div');
+          name.textContent = nodeId;
+
+          title.appendChild(dot);
+          title.appendChild(name);
+
+          const right = document.createElement('div');
+          right.className = 'nodeRight';
+          if (!ok) {
+            right.textContent = 'down';
+          } else if (!enabled) {
+            right.textContent = 'disabled';
+          } else {
+            right.textContent = 'enabled';
+          }
+
+          head.appendChild(title);
+          head.appendChild(right);
+          card.appendChild(head);
+
+          const meta = document.createElement('div');
+          meta.className = 'nodeMeta';
+
+          const mem = r.memory || {};
+          const total = mem && mem.total_bytes ? Number(mem.total_bytes) : 0;
+          const used = mem && (mem.tree_rss_bytes || mem.rss_bytes) ? Number(mem.tree_rss_bytes || mem.rss_bytes) : 0;
+          const cpu = r.cpu || {};
+          const pcpu = cpu && (cpu.tree_pcpu || cpu.pcpu) ? Number(cpu.tree_pcpu || cpu.pcpu) : null;
+          const workers = r.workers || {};
+          const wMax = workers && workers.max_workers !== undefined ? Number(workers.max_workers) : null;
+          const wAct = workers && workers.active_workers !== undefined ? Number(workers.active_workers) : null;
+          const wRet = workers && workers.retiring_workers !== undefined ? Number(workers.retiring_workers) : null;
+
+          const [runningCount, queuedCount, runningSamples] = (() => {
+            let rc = 0;
+            let qc = 0;
+            const samples = [];
+            for (const t of running) {
+              const [nid, inner] = splitCompositeId(t && t.task_id);
+              if (nid !== nodeId) continue;
+              rc += 1;
+              if (samples.length < 2) {
+                const stage = String(t.stage || '');
+                const pct = Math.round(Number(t.progress || 0) * 100);
+                samples.push(shortId(inner) + (stage ? ' ' + stage : '') + ' ' + String(pct) + '%');
+              }
+            }
+            for (const t of queued) {
+              const [nid] = splitCompositeId(t && t.task_id);
+              if (nid !== nodeId) continue;
+              qc += 1;
+            }
+            return [rc, qc, samples];
+          })();
+
+          const baseUrl = r.base_url ? String(r.base_url) : '';
+          const service = r.service ? String(r.service) : '';
+
+          const lines = [
+            ['url', baseUrl ? truncateText(baseUrl, 42) : '-'],
+            ['managed', managedText],
+            ['mem', ok ? formatMemLine(used, total) : '-'],
+            ['cpu', ok ? formatPcpu(pcpu) : '-'],
+            ['workers', ok ? ((Number.isFinite(wAct) && Number.isFinite(wMax)) ? String(wAct) + '/' + String(wMax) : (Number.isFinite(wMax) ? String(wMax) : '-')) + ((Number.isFinite(wRet) && wRet > 0) ? (' (+' + String(wRet) + ' retiring)') : '') : '-'],
+            ['activity', 'running ' + String(runningCount) + ' · queued ' + String(queuedCount)],
+            ['doing', runningSamples.length ? runningSamples.join(' · ') : '-'],
+          ];
+          if (service) lines.unshift(['service', truncateText(service, 42)]);
+
+          for (const [k, v] of lines) {
+            const row = document.createElement('div');
+            row.className = 'nodeMetaLine';
+            const kk = document.createElement('div');
+            kk.className = 'k';
+            kk.textContent = String(k);
+            const vv = document.createElement('div');
+            vv.className = 'v';
+            vv.textContent = String(v);
+            row.appendChild(kk);
+            row.appendChild(vv);
+            meta.appendChild(row);
+          }
+          card.appendChild(meta);
+
+          const controls = document.createElement('div');
+          controls.className = 'nodeControls';
+
+          const rowA = document.createElement('div');
+          rowA.className = 'row2';
+          const workerInput = document.createElement('input');
+          workerInput.type = 'number';
+          workerInput.min = '1';
+          workerInput.step = '1';
+          workerInput.placeholder = 'max workers';
+          if (Number.isFinite(wMax) && wMax > 0) workerInput.value = String(wMax);
+          const setBtn = document.createElement('button');
+          setBtn.className = 'primary';
+          setBtn.type = 'button';
+          setBtn.textContent = 'Set Workers';
+          setBtn.addEventListener('click', async () => {
+            const tok = String(_state.token || '').trim();
+            if (!tok) return;
+            const n = Number(workerInput.value);
+            if (!Number.isFinite(n) || n < 1) {
+              setNodesAdminHint('Invalid worker count');
+              return;
+            }
+            setBtn.disabled = true;
+            try {
+              setNodesAdminHint('Setting workers for ' + nodeId + '...');
+              await apiFetch('/v1/admin/nodes/' + encodeURIComponent(nodeId) + '/workers', tok, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ max_workers: Math.floor(n) }),
+              });
+              setNodesAdminHint('Updated workers for ' + nodeId + '.');
+              await refreshSystem(tok);
+            } catch (err) {
+              const msg = err && err.message ? err.message : String(err);
+              setNodesAdminHint(msg || 'Failed to set workers');
+            } finally {
+              setBtn.disabled = false;
+            }
+          });
+          rowA.appendChild(workerInput);
+          rowA.appendChild(setBtn);
+
+          const rowB = document.createElement('div');
+          rowB.className = 'row2';
+          const toggleBtn = document.createElement('button');
+          toggleBtn.type = 'button';
+          toggleBtn.textContent = enabled ? 'Disable' : 'Enable';
+          toggleBtn.addEventListener('click', async () => {
+            const tok = String(_state.token || '').trim();
+            if (!tok) return;
+            toggleBtn.disabled = true;
+            try {
+              setNodesAdminHint((enabled ? 'Disabling ' : 'Enabling ') + nodeId + '...');
+              await apiFetch(
+                '/v1/admin/nodes/' + encodeURIComponent(nodeId) + '/' + (enabled ? 'disable' : 'enable'),
+                tok,
+                { method: 'POST' }
+              );
+              await refreshSystem(tok);
+              await refreshQueue(tok);
+              setNodesAdminHint('Updated node ' + nodeId + '.');
+            } catch (err) {
+              const msg = err && err.message ? err.message : String(err);
+              setNodesAdminHint(msg || 'Failed to update node');
+            } finally {
+              toggleBtn.disabled = false;
+            }
+          });
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', async () => {
+            const tok = String(_state.token || '').trim();
+            if (!tok) return;
+            if (!confirm('Remove node ' + nodeId + ' from hub?')) return;
+            removeBtn.disabled = true;
+            try {
+              setNodesAdminHint('Removing ' + nodeId + '...');
+              await apiFetch('/v1/admin/nodes/' + encodeURIComponent(nodeId), tok, { method: 'DELETE' });
+              await refreshSystem(tok);
+              await refreshQueue(tok);
+              await refreshPresets(tok);
+              setNodesAdminHint('Removed node ' + nodeId + '.');
+            } catch (err) {
+              const msg = err && err.message ? err.message : String(err);
+              setNodesAdminHint(msg || 'Failed to remove node');
+            } finally {
+              removeBtn.disabled = false;
+            }
+          });
+          rowB.appendChild(toggleBtn);
+          rowB.appendChild(removeBtn);
+
+          controls.appendChild(rowA);
+          controls.appendChild(rowB);
+          card.appendChild(controls);
+
+          grid.appendChild(card);
+        }
+
+        if (procGrid && procHint) {
+          procGrid.innerHTML = '';
+
+          const lp = _state.lastLocalProcesses;
+          const procs = lp && Array.isArray(lp.processes) ? lp.processes : null;
+          if (!procs) {
+            let errText = String(_state.localProcessesError || '').trim();
+            if (errText && errText.toLowerCase().includes('not found')) errText = 'Admin API disabled';
+            procHint.textContent = errText ? ('Local Processes: ' + errText) : '';
+            return;
+          }
+
+          if (!procs.length) {
+            procHint.textContent = 'Local Processes: none found';
+            return;
+          }
+
+          procHint.textContent = 'Local Processes: ' + String(procs.length);
+
+          for (const p of procs) {
+            const pid = (p && p.pid !== undefined && p.pid !== null) ? String(p.pid) : '';
+            if (!pid) continue;
+
+            const nodeId = p && p.node_id ? String(p.node_id) : '';
+            const managed = Boolean(p && p.managed);
+            const baseUrl = p && p.base_url ? String(p.base_url) : '';
+            const command = p && p.command ? String(p.command) : '';
+            const status = managed ? 'managed' : (nodeId ? 'unmanaged' : 'orphan');
+            const ok = managed || Boolean(nodeId);
+
+            const card = document.createElement('div');
+            card.className = 'nodeCard';
+
+            const head = document.createElement('div');
+            head.className = 'nodeHeader';
+
+            const title = document.createElement('div');
+            title.className = 'nodeTitle';
+
+            const dot = document.createElement('span');
+            dot.className = 'dot';
+            setDot(dot, ok ? 'ok' : 'bad');
+
+            const name = document.createElement('div');
+            name.textContent = (nodeId ? (nodeId + ' · ') : '') + 'pid ' + pid;
+
+            title.appendChild(dot);
+            title.appendChild(name);
+
+            const right = document.createElement('div');
+            right.className = 'nodeRight';
+            right.textContent = status;
+
+            head.appendChild(title);
+            head.appendChild(right);
+            card.appendChild(head);
+
+            const meta = document.createElement('div');
+            meta.className = 'nodeMeta';
+
+            const lines = [
+              ['url', baseUrl ? truncateText(baseUrl, 42) : '-'],
+              ['node', nodeId || '-'],
+              ['managed', managed ? 'yes' : 'no'],
+              ['command', command ? truncateText(command, 80) : '-'],
+            ];
+
+            for (const [k, v] of lines) {
+              const row = document.createElement('div');
+              row.className = 'nodeMetaLine';
+              const kk = document.createElement('div');
+              kk.className = 'k';
+              kk.textContent = String(k);
+              const vv = document.createElement('div');
+              vv.className = 'v';
+              vv.textContent = String(v);
+              row.appendChild(kk);
+              row.appendChild(vv);
+              meta.appendChild(row);
+            }
+            card.appendChild(meta);
+
+            const controls = document.createElement('div');
+            controls.className = 'nodeControls';
+
+            const rowA = document.createElement('div');
+            rowA.className = 'row2';
+            const openBtn = document.createElement('button');
+            openBtn.type = 'button';
+            openBtn.textContent = 'Open';
+            openBtn.disabled = !baseUrl;
+            openBtn.addEventListener('click', () => {
+              const u = String(baseUrl || '').trim();
+              if (!u) return;
+              try {
+                window.open(u, '_blank', 'noreferrer');
+              } catch (e) {}
+            });
+
+            const termBtn = document.createElement('button');
+            termBtn.type = 'button';
+            termBtn.textContent = 'Terminate';
+            termBtn.addEventListener('click', async () => {
+              const tok = String(_state.token || '').trim();
+              if (!tok) return;
+              const label = (nodeId ? (nodeId + ' ') : '') + 'pid ' + pid;
+              if (!confirm('Terminate local process ' + label + '?')) return;
+              termBtn.disabled = true;
+              try {
+                setNodesAdminHint('Terminating ' + label + '...');
+                await apiFetch('/v1/admin/processes/local/' + encodeURIComponent(pid) + '/terminate', tok, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ remove: true }),
+                });
+                await refreshSystem(tok);
+                await refreshQueue(tok);
+                setNodesAdminHint('Terminated ' + label + '.');
+              } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                setNodesAdminHint(msg || 'Failed to terminate process');
+              } finally {
+                termBtn.disabled = false;
+              }
+            });
+
+            rowA.appendChild(openBtn);
+            rowA.appendChild(termBtn);
+            controls.appendChild(rowA);
+            card.appendChild(controls);
+
+            procGrid.appendChild(card);
+          }
+        }
+      }
+
+      function extractAssetId(dt) {
+        let raw = '';
+        if (dt && typeof dt.getData === 'function') {
+          raw = String(dt.getData('application/x-hapa-asset-id') || dt.getData('text/plain') || '').trim();
+        }
+        if (raw && _assetIdRe.test(raw)) return raw;
+
+        const fallback = String(_state.dragAssetId || '').trim();
+        if (fallback && _assetIdRe.test(fallback)) return fallback;
+        return '';
+      }
+
+      function refreshAttachmentHints() {
+        const mode = getValue('mode').trim() || 'txt2img';
+        const inputs = modeInputsFor(mode);
+        const required = new Set((inputs.required || []).map(String));
+        const optional = new Set((inputs.optional || []).map(String));
+
+        const needsImage = required.has('image_base64') || optional.has('image_base64');
+        const needsMask = required.has('masked_image_base64') || optional.has('masked_image_base64');
+        const needsDepth = required.has('depth_image_base64') || optional.has('depth_image_base64') || mode === 'depth';
+        const needsCtrl = required.has('controlnet_image_base64') || optional.has('controlnet_image_base64');
+        const needsRedux = required.has('redux_images_base64') || optional.has('redux_images_base64');
+
+        const assets = _state.assetInputs || {};
+
+        const setHint = (id, text) => {
+          const node = el(id);
+          if (!node) return;
+          node.textContent = String(text || '');
+        };
+
+        setHint('hint_image_file', needsImage ? (assets.image_asset_id ? 'asset ' + shortId(assets.image_asset_id) : 'drop') : '');
+        setHint(
+          'hint_masked_image_file',
+          needsMask ? (assets.masked_image_asset_id ? 'asset ' + shortId(assets.masked_image_asset_id) : 'drop') : ''
+        );
+        setHint('hint_depth_image_file', needsDepth ? (assets.depth_image_asset_id ? 'asset ' + shortId(assets.depth_image_asset_id) : 'drop') : '');
+        setHint(
+          'hint_controlnet_image_file',
+          needsCtrl ? (assets.controlnet_image_asset_id ? 'asset ' + shortId(assets.controlnet_image_asset_id) : 'drop') : ''
+        );
+
+        const reduxCount = Array.isArray(assets.redux_image_asset_ids) ? assets.redux_image_asset_ids.length : 0;
+        setHint('hint_redux_image_files', needsRedux ? (reduxCount ? 'assets ' + String(reduxCount) : 'drop') : '');
+      }
+
+      function attachDragAssetId(node, assetId) {
+        if (!node) return;
+        const aid = String(assetId || '').trim();
+        if (!aid) return;
+
+        node.dataset.assetId = aid;
+        node.setAttribute('draggable', 'true');
+        if (node.dataset.dragInstalled === '1') return;
+        node.dataset.dragInstalled = '1';
+
+        node.addEventListener('dragstart', (e) => {
+          const current = String(node.dataset.assetId || '').trim();
+          if (!current) return;
+          _state.dragAssetId = current;
+          if (!e || !e.dataTransfer) return;
+          try {
+            e.dataTransfer.setData('application/x-hapa-asset-id', current);
+            e.dataTransfer.setData('text/plain', current);
+            e.dataTransfer.effectAllowed = 'copy';
+          } catch (err) {}
+        });
+
+        node.addEventListener('dragend', () => {
+          _state.dragAssetId = '';
+        });
+
+        // Add preview handlers
+        attachPreviewHandlers(node, aid);
+      }
+
+      function attachPreviewHandlers(imgEl, assetId) {
+        if (!imgEl || !assetId) return;
+
+        // Hover quicklook
+        imgEl.addEventListener('mouseenter', (e) => {
+          showQuicklook(assetId, e.target);
+        });
+
+        imgEl.addEventListener('mouseleave', () => {
+          hideQuicklook();
+        });
+
+        // Click to open modal
+        imgEl.addEventListener('click', async () => {
+          await openDetailsModal(assetId);
+        });
+        imgEl.style.cursor = 'pointer';
+      }
+
+      function showQuicklook(assetId, targetEl) {
+        if (_state.quicklookTimeout) {
+          clearTimeout(_state.quicklookTimeout);
+        }
+
+        _state.quicklookTimeout = setTimeout(async () => {
+          const quicklook = el('quicklook');
+          const quicklookImage = el('quicklookImage');
+          if (!quicklook || !quicklookImage) return;
+
+          const url = await getAssetUrlCached(assetId);
+          if (!url) return;
+
+          quicklookImage.src = url;
+
+          // Position near the target element
+          const rect = targetEl.getBoundingClientRect();
+          const qlWidth = 400;
+          const qlHeight = 400;
+
+          let left = rect.right + 10;
+          let top = rect.top;
+
+          // Adjust if going off screen
+          if (left + qlWidth > window.innerWidth) {
+            left = rect.left - qlWidth - 10;
+          }
+          if (top + qlHeight > window.innerHeight) {
+            top = window.innerHeight - qlHeight - 20;
+          }
+          if (top < 20) top = 20;
+          if (left < 20) left = 20;
+
+          quicklook.style.left = left + 'px';
+          quicklook.style.top = top + 'px';
+          quicklook.classList.add('visible');
+        }, 200);
+      }
+
+      function hideQuicklook() {
+        if (_state.quicklookTimeout) {
+          clearTimeout(_state.quicklookTimeout);
+          _state.quicklookTimeout = null;
+        }
+        const quicklook = el('quicklook');
+        if (quicklook) {
+          quicklook.classList.remove('visible');
+        }
+      }
+
+      async function openDetailsModal(assetId, taskId) {
+        const token = _state.token || normalizeToken(getValue('token'));
+        if (!token) {
+          alert('Token required to view asset details');
+          return;
+        }
+
+        _state.currentModalAssetId = assetId;
+        _state.currentModalTaskId = taskId || '';
+        _state.currentModalRequest = null;
+
+        const overlay = el('modalOverlay');
+        const modalImage = el('modalImage');
+        const modalAssetId = el('modalAssetId');
+        const modalMetadata = el('modalMetadata');
+
+        if (!overlay || !modalImage) return;
+
+        // Show modal immediately with loading state
+        overlay.classList.add('visible');
+        modalAssetId.textContent = shortId(assetId);
+        modalMetadata.innerHTML = '<div style="color: rgba(148, 163, 184, 0.8); text-align: center;">Loading metadata...</div>';
+
+        // Set image
+        const url = await getAssetUrlCached(assetId);
+        if (url) {
+          modalImage.src = url;
+        }
+
+        // Fetch metadata
+        try {
+          const metadata = await apiFetch('/v1/assets/' + assetId, token, { method: 'GET' });
+          renderModalMetadata(metadata);
+        } catch (err) {
+          modalMetadata.innerHTML = '<div style="color: rgba(239, 68, 68, 0.8); text-align: center;">Failed to load metadata</div>';
+        }
+
+        // If we have a taskId, fetch task details
+        if (taskId) {
+          try {
+            const task = await apiFetch('/v1/tasks/' + taskId, token, { method: 'GET' });
+            if (task && task.request) {
+              _state.currentModalRequest = task.request;
+            }
+          } catch (err) {
+            // Task fetch is optional, ignore errors
+          }
+        }
+      }
+
+      function renderModalMetadata(metadata) {
+        const container = el('modalMetadata');
+        if (!container || !metadata) return;
+
+        container.innerHTML = '';
+
+        // Core info group
+        const coreGroup = document.createElement('div');
+        coreGroup.className = 'modal-metadata-group';
+
+        const coreTitle = document.createElement('div');
+        coreTitle.className = 'modal-metadata-title';
+        coreTitle.textContent = 'Asset Information';
+        coreGroup.appendChild(coreTitle);
+
+        const coreItems = document.createElement('div');
+        coreItems.className = 'modal-metadata-items';
+
+        const addItem = (key, value) => {
+          const item = document.createElement('div');
+          item.className = 'modal-metadata-item';
+          const k = document.createElement('div');
+          k.className = 'modal-metadata-key';
+          k.textContent = key;
+          const v = document.createElement('div');
+          v.className = 'modal-metadata-value';
+          v.textContent = String(value || '-');
+          item.appendChild(k);
+          item.appendChild(v);
+          return item;
+        };
+
+        coreItems.appendChild(addItem('Asset ID', metadata.asset_id));
+        coreItems.appendChild(addItem('Type', metadata.type));
+        coreItems.appendChild(addItem('Created', metadata.created_at ? new Date(metadata.created_at).toLocaleString() : '-'));
+        if (metadata.path) {
+          const filename = metadata.path.split('/').pop();
+          coreItems.appendChild(addItem('Filename', filename));
+        }
+
+        coreGroup.appendChild(coreItems);
+        container.appendChild(coreGroup);
+
+        // Generation metadata group
+        const meta = metadata.metadata || {};
+        if (Object.keys(meta).length > 0) {
+          const genGroup = document.createElement('div');
+          genGroup.className = 'modal-metadata-group';
+
+          const genTitle = document.createElement('div');
+          genTitle.className = 'modal-metadata-title';
+          genTitle.textContent = 'Generation Details';
+          genGroup.appendChild(genTitle);
+
+          const genItems = document.createElement('div');
+          genItems.className = 'modal-metadata-items';
+
+          // Important generation params
+          if (meta.mode) genItems.appendChild(addItem('Mode', meta.mode));
+          if (meta.model) genItems.appendChild(addItem('Model', meta.model));
+          if (meta.engine) genItems.appendChild(addItem('Engine', meta.engine));
+
+          // Timing information
+          if (meta.generation_started_at && meta.generation_completed_at) {
+            const startTime = new Date(meta.generation_started_at);
+            const endTime = new Date(meta.generation_completed_at);
+            const totalMs = endTime - startTime;
+            const totalSeconds = (totalMs / 1000).toFixed(1);
+            genItems.appendChild(addItem('Generation Time', `${totalSeconds}s`));
+            genItems.appendChild(addItem('Started', startTime.toLocaleTimeString()));
+            genItems.appendChild(addItem('Completed', endTime.toLocaleTimeString()));
+          } else if (meta.generation_time_ms) {
+            const totalSeconds = (meta.generation_time_ms / 1000).toFixed(1);
+            genItems.appendChild(addItem('Generation Time', `${totalSeconds}s`));
+          }
+
+          if (meta.prompt) {
+            const promptItem = addItem('Prompt', meta.prompt);
+            promptItem.style.flexDirection = 'column';
+            promptItem.style.gap = '4px';
+            genItems.appendChild(promptItem);
+          }
+          if (meta.negative_prompt) {
+            const negItem = addItem('Negative', meta.negative_prompt);
+            negItem.style.flexDirection = 'column';
+            negItem.style.gap = '4px';
+            genItems.appendChild(negItem);
+          }
+          if (meta.width) genItems.appendChild(addItem('Dimensions', `${meta.width} × ${meta.height}`));
+          if (meta.steps) genItems.appendChild(addItem('Steps', meta.steps));
+          if (meta.guidance) genItems.appendChild(addItem('Guidance', meta.guidance));
+          if (meta.seed) genItems.appendChild(addItem('Seed', meta.seed));
+          if (meta.quantize) genItems.appendChild(addItem('Quantize', meta.quantize));
+
+          genGroup.appendChild(genItems);
+          container.appendChild(genGroup);
+        }
+      }
+
+      function installAssetDropZone(fieldId, inputId, key, multi) {
+        const field = el(fieldId);
+        const input = el(inputId);
+        if (!field || !input) return;
+
+        let dragDepth = 0;
+        const activate = () => field.classList.add('dropZoneActive');
+        const deactivate = () => {
+          dragDepth = 0;
+          field.classList.remove('dropZoneActive');
+        };
+
+        field.addEventListener('dragenter', (e) => {
+          const aid = extractAssetId(e.dataTransfer);
+          if (!aid) return;
+          dragDepth += 1;
+          activate();
+          e.preventDefault();
+        });
+
+        field.addEventListener('dragover', (e) => {
+          const aid = extractAssetId(e.dataTransfer);
+          if (!aid) return;
+          activate();
+          e.preventDefault();
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        });
+
+        field.addEventListener('dragleave', (e) => {
+          dragDepth = Math.max(0, dragDepth - 1);
+          if (dragDepth === 0) deactivate();
+        });
+
+        field.addEventListener('drop', (e) => {
+          const aid = extractAssetId(e.dataTransfer);
+          if (!aid) return;
+          e.preventDefault();
+          deactivate();
+
+          try {
+            input.value = '';
+          } catch (err) {}
+
+          if (multi) {
+            const cur = Array.isArray(_state.assetInputs[key]) ? _state.assetInputs[key].map(String) : [];
+            if (!cur.includes(aid)) cur.push(aid);
+            _state.assetInputs[key] = cur;
+          } else {
+            _state.assetInputs[key] = aid;
+          }
+
+          refreshAttachmentHints();
+        });
+
+        input.addEventListener('change', () => {
+          if (multi) {
+            _state.assetInputs[key] = [];
+          } else {
+            _state.assetInputs[key] = '';
+          }
+          refreshAttachmentHints();
+        });
+      }
+
+      function setupModalHandlers() {
+        const overlay = el('modalOverlay');
+        const closeBtn = el('modalClose');
+        const modalImage = el('modalImage');
+        const downloadBtn = el('modalDownload');
+        const openTabBtn = el('modalOpenTab');
+        const copyAssetBtn = el('modalCopyAssetId');
+        const copyTaskBtn = el('modalCopyTaskId');
+        const loadIntoRunBtn = el('modalLoadIntoRun');
+
+        // Close modal
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            overlay.classList.remove('visible');
+            _state.currentModalAssetId = '';
+            _state.currentModalTaskId = '';
+            _state.currentModalRequest = null;
+          });
+        }
+
+        // Close on overlay click
+        if (overlay) {
+          overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+              overlay.classList.remove('visible');
+              _state.currentModalAssetId = '';
+              _state.currentModalTaskId = '';
+              _state.currentModalRequest = null;
+            }
+          });
+        }
+
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && overlay && overlay.classList.contains('visible')) {
+            overlay.classList.remove('visible');
+            _state.currentModalAssetId = '';
+            _state.currentModalTaskId = '';
+            _state.currentModalRequest = null;
+          }
+        });
+
+        // Image zoom toggle
+        if (modalImage) {
+          let currentZoomLevel = 1
+          const zoomLevels = [1, 2, 3, 4, 5, 6, 8, 10]
+          modalImage.addEventListener('click', function(e) {
+            const currentIndex = zoomLevels.indexOf(currentZoomLevel)
+            const nextIndex = (currentIndex + 1) % zoomLevels.length
+            currentZoomLevel = zoomLevels[nextIndex]
+
+            if (currentZoomLevel === 1) {
+              this.classList.remove('zoomed')
+              this.removeAttribute('data-zoom-level')
+            } else {
+              this.classList.add('zoomed')
+              this.setAttribute('data-zoom-level', currentZoomLevel)
+            }
+          })
+
+          // Reset zoom when modal closes
+          const originalCloseHandler = closeBtn.onclick
+          closeBtn.onclick = function() {
+            currentZoomLevel = 1
+            modalImage.classList.remove('zoomed')
+            modalImage.removeAttribute('data-zoom-level')
+            if (originalCloseHandler) originalCloseHandler.call(this)
+          };
+        }
+
+        // Download button
+        if (downloadBtn) {
+          downloadBtn.addEventListener('click', async () => {
+            if (!_state.currentModalAssetId) return;
+            await downloadAsset(_state.currentModalAssetId);
+          });
+        }
+
+        // Open in new tab
+        if (openTabBtn) {
+          openTabBtn.addEventListener('click', async () => {
+            if (!_state.currentModalAssetId) return;
+            const url = await getAssetUrlCached(_state.currentModalAssetId);
+            if (url) {
+              window.open(url, '_blank', 'noreferrer');
+            }
+          });
+        }
+
+        // Copy asset ID
+        if (copyAssetBtn) {
+          copyAssetBtn.addEventListener('click', async () => {
+            if (!_state.currentModalAssetId) return;
+            try {
+              await copyText(_state.currentModalAssetId);
+              copyAssetBtn.textContent = 'Copied!';
+              setTimeout(() => {
+                copyAssetBtn.textContent = 'Copy Asset ID';
+              }, 2000);
+            } catch (err) {
+              alert('Failed to copy asset ID');
+            }
+          });
+        }
+
+        // Copy task ID
+        if (copyTaskBtn) {
+          copyTaskBtn.addEventListener('click', async () => {
+            if (!_state.currentModalTaskId) {
+              alert('No task ID available');
+              return;
+            }
+            try {
+              await copyText(_state.currentModalTaskId);
+              copyTaskBtn.textContent = 'Copied!';
+              setTimeout(() => {
+                copyTaskBtn.textContent = 'Copy Task ID';
+              }, 2000);
+            } catch (err) {
+              alert('Failed to copy task ID');
+            }
+          });
+        }
+
+        // Load into run
+        if (loadIntoRunBtn) {
+          loadIntoRunBtn.addEventListener('click', async () => {
+            if (!_state.currentModalRequest) {
+              // Try to create a request from the asset metadata
+              const token = _state.token || normalizeToken(getValue('token'));
+              if (token && _state.currentModalAssetId) {
+                try {
+                  const metadata = await apiFetch('/v1/assets/' + _state.currentModalAssetId, token, { method: 'GET' });
+                  if (metadata && metadata.metadata) {
+                    const meta = metadata.metadata;
+                    // Build a minimal request from metadata
+                    _state.currentModalRequest = {
+                      mode: meta.mode || 'txt2img',
+                      model: meta.model || 'schnell',
+                      prompt: meta.prompt || '',
+                      negative_prompt: meta.negative_prompt || null,
+                      steps: meta.steps || null,
+                      guidance: meta.guidance || null,
+                      width: meta.width || null,
+                      height: meta.height || null,
+                      seed: meta.seed || null,
+                      quantize: meta.quantize || null,
+                    };
+                  }
+                } catch (err) {
+                  // Ignore
+                }
+              }
+            }
+
+            if (!_state.currentModalRequest) {
+              alert('No request data available');
+              return;
+            }
+
+            // Apply the request to the form
+            const req = _state.currentModalRequest;
+            if (req.mode) el('mode').value = req.mode;
+            if (req.model) el('model').value = req.model;
+            if (req.prompt) el('prompt').value = req.prompt;
+            if (req.negative_prompt) el('negative_prompt').value = req.negative_prompt;
+            if (req.steps != null) el('steps').value = String(req.steps);
+            if (req.guidance != null) el('guidance').value = String(req.guidance);
+            if (req.width != null) el('width').value = String(req.width);
+            if (req.height != null) el('height').value = String(req.height);
+            if (req.seed != null) el('seed').value = String(req.seed);
+            if (req.quantize != null) el('quantize').value = String(req.quantize);
+
+            // Also set the generated image as input if in img2img mode
+            if (req.mode && req.mode !== 'txt2img' && _state.currentModalAssetId) {
+              _state.assetInputs.image_asset_id = _state.currentModalAssetId;
+              refreshAttachmentHints();
+            }
+
+            // Close modal
+            overlay.classList.remove('visible');
+            _state.currentModalAssetId = '';
+            _state.currentModalTaskId = '';
+            _state.currentModalRequest = null;
+
+            // Focus on prompt field
+            el('prompt').focus();
+          });
+        }
+      }
+
+      function setupAssetDropZones() {
+        installAssetDropZone('field_image_file', 'image_file', 'image_asset_id', false);
+        installAssetDropZone('field_masked_image_file', 'masked_image_file', 'masked_image_asset_id', false);
+        installAssetDropZone('field_depth_image_file', 'depth_image_file', 'depth_image_asset_id', false);
+        installAssetDropZone('field_controlnet_image_file', 'controlnet_image_file', 'controlnet_image_asset_id', false);
+        installAssetDropZone('field_redux_image_files', 'redux_image_files', 'redux_image_asset_ids', true);
+      }
+
+      function refreshModeUI() {
+        const mode = getValue('mode').trim() || 'txt2img';
+        const inputs = modeInputsFor(mode);
+        const required = new Set((inputs.required || []).map(String));
+        const optional = new Set((inputs.optional || []).map(String));
+
+        const needsImage = required.has('image_base64') || optional.has('image_base64');
+        const needsMask = required.has('masked_image_base64') || optional.has('masked_image_base64');
+        const needsDepth = required.has('depth_image_base64') || optional.has('depth_image_base64');
+        const needsCtrl = required.has('controlnet_image_base64') || optional.has('controlnet_image_base64');
+        const needsRedux = required.has('redux_images_base64') || optional.has('redux_images_base64');
+
+        setFieldVisible('field_image_file', needsImage);
+        setFieldVisible('field_masked_image_file', needsMask);
+        setFieldVisible('field_depth_image_file', needsDepth || mode === 'depth');
+        setFieldVisible('field_controlnet_image_file', needsCtrl);
+        setFieldVisible('field_redux_image_files', needsRedux);
+
+        setFieldVisible('field_image_strength', mode === 'img2img');
+        setFieldVisible('field_controlnet_strength', mode === 'controlnet' || mode === 'upscale');
+        setFieldVisible('field_redux_image_strengths', mode === 'redux');
+
+        const req = Array.from(required.values());
+        el('attachHint').textContent = req.length ? 'required: ' + req.join(' ') : 'none';
+        refreshAttachmentHints();
+      }
+
+      function refreshModelHints() {
+        const model = getValue('model').trim();
+        const baseModelEl = el('base_model');
+        const hint = el('baseModelHint');
+        const builtin = new Set(['schnell', 'dev', 'krea-dev', 'fibo', 'z-image-turbo']);
+        const needs = model && !builtin.has(model);
+        if (needs) {
+          baseModelEl.style.borderColor = 'rgba(251, 191, 36, 0.55)';
+          hint.textContent = 'Required for this model';
+        } else {
+          baseModelEl.style.borderColor = 'rgba(148, 163, 184, 0.18)';
+          hint.textContent = 'Required only for third-party models/paths';
+        }
+
+        const caps = _state.caps || {};
+        const image = ((caps.modalities || {}).image || {});
+        const defaults = image.default_steps || null;
+        const stepsEl = el('steps');
+        if (defaults && typeof defaults === 'object' && defaults[model] && !getValue('steps').trim()) {
+          stepsEl.placeholder = '(auto: ' + String(defaults[model]) + ')';
+        } else if (!getValue('steps').trim()) {
+          stepsEl.placeholder = '(auto)';
+        }
+      }
+
+      function updateFromCaps(caps) {
+        const image = ((caps || {}).modalities || {}).image || {};
+
+        const modes = Array.isArray(image.modes) && image.modes.length ? image.modes.map(String) : null;
+        const models = Array.isArray(image.models) && image.models.length ? image.models.map(String) : null;
+        const allowedQuant = Array.isArray(image.allowed_quantize) && image.allowed_quantize.length ? image.allowed_quantize.map(String) : null;
+
+        if (modes) setSelectOptions(el('mode'), modes);
+        if (models) setSelectOptions(el('model'), models);
+        if (allowedQuant) setSelectOptions(el('quantize'), allowedQuant);
+
+        const supported = [];
+        if (modes) supported.push(modes.length + ' modes');
+        if (models) supported.push(models.length + ' models');
+        el('coreHint').textContent = supported.join(' · ');
+
+        refreshModeUI();
+        refreshModelHints();
+      }
+
+      async function connect() {
+        try {
+          const token = normalizeToken(getValue('token'));
+          if (!token) {
+            setStatus('Token required', 'error');
+            setDot(el('dotHealth'), 'bad');
+            el('healthText').textContent = 'no token';
+            return;
+          }
+          el('token').value = token;
+          saveDevToken(token);
+
+          setDot(el('dotHealth'), '');
+          setDot(el('dotCaps'), '');
+          el('healthText').textContent = 'connecting';
+          el('capsText').textContent = 'checking';
+          el('capsSummary').textContent = 'connecting';
+          setStatus('Connecting...', 0);
+
+          const healthRes = await fetch('/health', { method: 'GET' });
+          const healthText = await healthRes.text();
+          const health = safeJson(healthText) || {};
+          _state.health = health;
+
+          if (!healthRes.ok) {
+            setDot(el('dotHealth'), 'bad');
+            el('healthText').textContent = 'health error';
+            setStatus('Health check failed: HTTP ' + healthRes.status, 'error');
+            return;
+          }
+
+          setDot(el('dotHealth'), 'ok');
+          el('healthText').textContent = 'online';
+
+          // Get capabilities - both hub and node use /capabilities
+          let caps;
+          try {
+            caps = await apiFetch('/capabilities', token, { method: 'GET' });
+          } catch (e) {
+            setDot(el('dotCaps'), 'bad');
+            el('capsText').textContent = 'auth failed';
+            el('capsSummary').textContent = 'auth error';
+            setStatus('Authentication failed: ' + (e.message || 'Invalid token'), 'error');
+            console.error('Auth error:', e);
+            return;
+          }
+
+          _state.caps = caps;
+
+          setDot(el('dotCaps'), 'ok');
+          el('capsText').textContent = 'capabilities loaded';
+          updateFromCaps(caps);
+
+          const service = health.service || caps.service || 'service';
+          const apiVersion = health.api_version || caps.api_version || 'v1';
+          el('serverMeta').textContent = String(service) + ' // ' + String(apiVersion);
+          el('capsSummary').textContent = 'connected';
+
+          el('queueHint').textContent = 'loading';
+          el('queueSummary').textContent = '...';
+          el('presetsSummary').textContent = '...';
+          startLive(token);
+
+          setStatus('Ready.', 0);
+        } catch (err) {
+          console.error('Connection error:', err);
+          setDot(el('dotHealth'), 'bad');
+          setDot(el('dotCaps'), 'bad');
+          el('healthText').textContent = 'error';
+          el('capsText').textContent = 'error';
+          el('capsSummary').textContent = 'disconnected';
+          setStatus('Connection failed: ' + (err.message || 'Unknown error'), 'error');
+        }
+      }
+
+      function clearOutput() {
+        _state.pollSeq += 1;
+        setProcessing(false);
+        setStatus('Ready.', 0);
+        el('task_id').textContent = '-';
+        el('asset_id').textContent = '-';
+        el('openResult').href = '#';
+        el('openResult').style.visibility = 'hidden';
+
+        _state.lastAssetId = '';
+
+        const img = el('result');
+        img.removeAttribute('src');
+        img.dataset.assetId = '';
+        img.removeAttribute('draggable');
+
+        if (_state.lastObjectUrl) {
+          try {
+            URL.revokeObjectURL(_state.lastObjectUrl);
+          } catch (e) {}
+          _state.lastObjectUrl = null;
+        }
+      }
+
+      async function downloadAsset(assetId, token) {
+        const res = await fetch('/v1/assets/' + assetId + '/download', {
+          headers: { Authorization: 'Bearer ' + token },
+        });
+        if (!res.ok) {
+          throw new Error('Download failed: HTTP ' + res.status);
+        }
+        const blob = await res.blob();
+        return URL.createObjectURL(blob);
+      }
+
+      function formatSeconds(seconds) {
+        if (seconds === null || seconds === undefined) return '-';
+        const n = Number(seconds);
+        if (!Number.isFinite(n)) return '-';
+        const s = Math.max(0, n);
+        if (s < 60) return s.toFixed(2) + 's';
+        const m = Math.floor(s / 60);
+        const rem = s - m * 60;
+        return String(m) + 'm ' + rem.toFixed(1) + 's';
+      }
+
+      function formatBytes(bytes) {
+        if (bytes === null || bytes === undefined) return '-';
+        const n = Number(bytes);
+        if (!Number.isFinite(n)) return '-';
+        const b = Math.max(0, n);
+
+        const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        let v = b;
+        let i = 0;
+        while (v >= 1024 && i < units.length - 1) {
+          v /= 1024;
+          i += 1;
+        }
+        const dp = v >= 100 ? 0 : v >= 10 ? 1 : 2;
+        return v.toFixed(dp) + units[i];
+      }
+
+      function formatMemLine(usedBytes, totalBytes) {
+        const used = Number(usedBytes || 0);
+        const total = Number(totalBytes || 0);
+        if (!Number.isFinite(used) || used <= 0) {
+          if (!Number.isFinite(total) || total <= 0) return '-';
+          return '0 / ' + formatBytes(total) + ' (0%)';
+        }
+        if (!Number.isFinite(total) || total <= 0) return formatBytes(used);
+        const pct = (used / total) * 100;
+        const pctText = Number.isFinite(pct) ? pct.toFixed(1) + '%' : '-';
+        return formatBytes(used) + ' / ' + formatBytes(total) + ' (' + pctText + ')';
+      }
+
+      function formatPcpu(value) {
+        if (value === null || value === undefined) return '-';
+        const n = Number(value);
+        if (!Number.isFinite(n)) return '-';
+        return n.toFixed(1) + '%';
+      }
+
+      function isoToMs(iso) {
+        if (!iso) return null;
+        const d = new Date(String(iso));
+        const ms = d.getTime();
+        return Number.isFinite(ms) ? ms : null;
+      }
+
+      function secondsSince(iso) {
+        const ms = isoToMs(iso);
+        if (ms === null) return null;
+        return (Date.now() - ms) / 1000.0;
+      }
+
+      function truncateText(value, maxLen) {
+        const s = String(value || '');
+        const n = Number(maxLen || 0);
+        if (!n || n <= 0) return s;
+        if (s.length <= n) return s;
+        return s.slice(0, n - 1) + '…';
+      }
+
+      function setListEmpty(container, text) {
+        if (!container) return;
+        container.innerHTML = '';
+        const h = document.createElement('div');
+        h.className = 'hint';
+        h.textContent = String(text || '(none)');
+        container.appendChild(h);
+      }
+
+      function pruneAssetUrlCache() {
+        const keep = new Set([
+          ...(_state.queueThumbAssetIds || []).map(String),
+          ...(_state.presetThumbAssetIds || []).map(String),
+        ]);
+
+        for (const [aid, v] of Object.entries(_state.assetUrlCache || {})) {
+          if (keep.has(aid)) continue;
+          if (typeof v === 'string') {
+            try {
+              URL.revokeObjectURL(v);
+            } catch (e) {}
+            delete _state.assetUrlCache[aid];
+          }
+        }
+      }
+
+      async function getAssetUrlCached(assetId, token) {
+        const aid = String(assetId || '').trim();
+        if (!aid) return '';
+
+        const existing = (_state.assetUrlCache || {})[aid];
+        if (typeof existing === 'string') return existing;
+        if (existing && typeof existing.then === 'function') return await existing;
+
+        const p = downloadAsset(aid, token)
+          .then((url) => {
+            _state.assetUrlCache[aid] = url;
+            return url;
+          })
+          .catch((err) => {
+            delete _state.assetUrlCache[aid];
+            throw err;
+          });
+        _state.assetUrlCache[aid] = p;
+        return await p;
+      }
+
+      function renderQueueList(container, tasks, token, seq, kind) {
+        if (!container) return [];
+        container.innerHTML = '';
+
+        const items = Array.isArray(tasks) ? tasks : [];
+        if (!items.length) {
+          setListEmpty(container, '(none)');
+          return [];
+        }
+
+        const thumbAssetIds = [];
+        for (let i = 0; i < items.length; i++) {
+          const t = items[i] || {};
+          const req = t.request || {};
+          const taskId = String(t.task_id || '');
+          const status = String(t.status || '');
+          const stage = String(t.stage || '');
+          const mode = String(req.mode || '');
+          const prompt = String(req.prompt || '');
+
+          const itemEl = document.createElement('div');
+          itemEl.className = 'queueItem';
+
+          const assetId = t.result && t.result.asset_id ? String(t.result.asset_id || '') : '';
+          if (assetId) {
+            thumbAssetIds.push(assetId);
+            const img = document.createElement('img');
+            img.className = kind === 'recent' ? 'thumb' : 'thumb small';
+            img.alt = '';
+            img.dataset.assetId = assetId;
+            attachDragAssetId(img, assetId);
+            itemEl.appendChild(img);
+
+            getAssetUrlCached(assetId, token)
+              .then((url) => {
+                if (seq !== _state.queueSeq) return;
+                if (!img.isConnected) return;
+                if (String(img.dataset.assetId || '') !== assetId) return;
+                img.src = url;
+              })
+              .catch((e) => {});
+          } else {
+            const ph = document.createElement('div');
+            ph.className = kind === 'recent' ? 'thumb' : 'thumb small';
+            itemEl.appendChild(ph);
+          }
+
+          const textEl = document.createElement('div');
+          textEl.className = 'queueText';
+
+          const primary = document.createElement('div');
+          primary.className = 'queuePrimary';
+          let lead = '';
+          if (kind === 'queued') lead = '#' + String(i + 1) + ' ';
+          primary.textContent = lead + (mode ? mode + ' · ' : '') + status + ' · ' + shortId(taskId);
+
+          const secondary = document.createElement('div');
+          secondary.className = 'queueSecondary';
+          const pct = Math.round(Number(t.progress || 0) * 100);
+          const timePart =
+            status === 'queued'
+              ? 'queued ' + formatSeconds(secondsSince(t.created_at))
+              : status === 'running'
+              ? 'stage ' + stage + ' · ' + String(pct) + '% · ' + formatSeconds(secondsSince(t.started_at))
+              : 'wait ' + formatSeconds(t.queue_wait_seconds) + ' · run ' + formatSeconds(t.run_seconds) + ' · total ' + formatSeconds(t.total_seconds);
+          secondary.textContent = timePart + (prompt ? ' · ' + truncateText(prompt, 72) : '');
+
+          textEl.appendChild(primary);
+          textEl.appendChild(secondary);
+          itemEl.appendChild(textEl);
+
+          container.appendChild(itemEl);
+        }
+        return thumbAssetIds;
+      }
+
+      async function refreshQueue(token) {
+        const t = String(token || '').trim();
+        if (!t) return;
+        if (_state.queueInFlight) return;
+
+        _state.queueInFlight = true;
+        const seq = _state.queueSeq + 1;
+        _state.queueSeq = seq;
+
+        try {
+          const q = await apiFetch('/v1/queue?queued_limit=25&running_limit=10&recent_limit=20', t, { method: 'GET' });
+          if (seq !== _state.queueSeq) return;
+
+          _state.lastQueue = q;
+
+          const counts = q && q.counts ? q.counts : {};
+          const runningCount = Number(counts.running || 0);
+          const queuedCount = Number(counts.queued || 0);
+          const okCount = Number(counts.succeeded || 0);
+          const failCount = Number(counts.failed || 0);
+
+          el('queueHint').textContent = '';
+          el('queueSummary').textContent =
+            'running ' + runningCount + ' · queued ' + queuedCount + ' · ok ' + okCount + ' · fail ' + failCount;
+
+          const runningThumbs = renderQueueList(el('queueRunning'), q.running, t, seq, 'running');
+          const queuedThumbs = renderQueueList(el('queueQueued'), q.queued, t, seq, 'queued');
+          const recentThumbs = renderQueueList(el('queueRecent'), q.recent, t, seq, 'recent');
+
+          _state.queueThumbAssetIds = Array.from(new Set([...runningThumbs, ...queuedThumbs, ...recentThumbs].map(String)));
+          pruneAssetUrlCache();
+
+          renderNodesPanel();
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          el('queueHint').textContent = msg;
+          el('queueSummary').textContent = 'error';
+          _state.lastQueue = null;
+          renderNodesPanel();
+        } finally {
+          _state.queueInFlight = false;
+        }
+      }
+
+      async function applyPreset(presetId) {
+        const token = _state.token || normalizeToken(getValue('token'));
+        if (!token) throw new Error('Token required');
+
+        setStatus('Loading preset...', 0);
+        const p = await apiFetch('/v1/presets/' + String(presetId), token, { method: 'GET' });
+        const req = p && p.request ? p.request : {};
+
+        const setText = (id, v) => {
+          const node = el(id);
+          if (!node) return;
+          node.value = v === null || v === undefined ? '' : String(v);
+        };
+        const setNum = (id, v) => {
+          const node = el(id);
+          if (!node) return;
+          if (v === null || v === undefined || v === '') {
+            node.value = '';
+            return;
+          }
+          const n = Number(v);
+          node.value = Number.isFinite(n) ? String(n) : '';
+        };
+
+        setText('prompt', req.prompt);
+        setText('negative_prompt', req.negative_prompt);
+
+        if (req.mode !== undefined && el('mode')) el('mode').value = String(req.mode || '');
+        if (req.model !== undefined && el('model')) el('model').value = String(req.model || '');
+        if (req.base_model !== undefined && el('base_model')) el('base_model').value = String(req.base_model || '');
+
+        setText('lora_style', req.lora_style);
+        setText('lora_paths', Array.isArray(req.lora_paths) ? req.lora_paths.map(String).join('\n') : '');
+        setText(
+          'lora_scales',
+          Array.isArray(req.lora_scales) ? req.lora_scales.map((x) => String(x)).join(',') : ''
+        );
+
+        setNum('steps', req.steps);
+        setNum('seed', req.seed);
+        setNum('width', req.width);
+        setNum('height', req.height);
+
+        if (req.quantize !== undefined && el('quantize')) {
+          const q = req.quantize;
+          el('quantize').value = q === null || q === undefined ? el('quantize').value : String(q);
+        }
+        setNum('guidance', req.guidance);
+        if (req.low_ram !== undefined && el('low_ram')) el('low_ram').value = req.low_ram ? '1' : '0';
+
+        setNum('image_strength', req.image_strength);
+        setNum('controlnet_strength', req.controlnet_strength);
+        setText(
+          'redux_image_strengths',
+          Array.isArray(req.redux_image_strengths) ? req.redux_image_strengths.map((x) => String(x)).join(',') : ''
+        );
+
+        try {
+          el('image_file').value = '';
+          el('masked_image_file').value = '';
+          el('depth_image_file').value = '';
+          el('controlnet_image_file').value = '';
+          el('redux_image_files').value = '';
+        } catch (e) {}
+
+        _state.assetInputs.image_asset_id = req.image_asset_id ? String(req.image_asset_id) : '';
+        _state.assetInputs.masked_image_asset_id = req.masked_image_asset_id ? String(req.masked_image_asset_id) : '';
+        _state.assetInputs.depth_image_asset_id = req.depth_image_asset_id ? String(req.depth_image_asset_id) : '';
+        _state.assetInputs.controlnet_image_asset_id = req.controlnet_image_asset_id ? String(req.controlnet_image_asset_id) : '';
+        _state.assetInputs.redux_image_asset_ids = Array.isArray(req.redux_image_asset_ids)
+          ? req.redux_image_asset_ids.map(String)
+          : [];
+
+        refreshModeUI();
+        refreshModelHints();
+        refreshAttachmentHints();
+
+        setStatus('Preset applied.', 0);
+      }
+
+      async function refreshPresets(token) {
+        const t = String(token || '').trim();
+        if (!t) return;
+        if (_state.presetsInFlight) return;
+
+        _state.presetsInFlight = true;
+        const seq = _state.presetsSeq + 1;
+        _state.presetsSeq = seq;
+
+        try {
+          const data = await apiFetch('/v1/presets?limit=50&offset=0', t, { method: 'GET' });
+          if (seq !== _state.presetsSeq) return;
+
+          const presets = data && Array.isArray(data.presets) ? data.presets : [];
+          el('presetsSummary').textContent = String(presets.length);
+
+          const grid = el('presetsGrid');
+          if (grid) grid.innerHTML = '';
+
+          const thumbAssetIds = [];
+          for (const preset of presets) {
+            const pid = preset && preset.preset_id ? String(preset.preset_id) : '';
+            const name = preset && preset.name ? String(preset.name) : '(preset)';
+            const thumbId = preset && preset.thumbnail_asset_id ? String(preset.thumbnail_asset_id) : '';
+
+            const card = document.createElement('div');
+            card.className = 'presetCard';
+            card.addEventListener('click', async () => {
+              try {
+                await applyPreset(pid);
+              } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                setStatus('Error: ' + msg, 0);
+              }
+            });
+
+            if (thumbId) {
+              thumbAssetIds.push(thumbId);
+              const img = document.createElement('img');
+              img.className = 'thumb';
+              img.alt = '';
+              img.dataset.assetId = thumbId;
+              attachDragAssetId(img, thumbId);
+              card.appendChild(img);
+
+              getAssetUrlCached(thumbId, t)
+                .then((url) => {
+                  if (seq !== _state.presetsSeq) return;
+                  if (!img.isConnected) return;
+                  if (String(img.dataset.assetId || '') !== thumbId) return;
+                  img.src = url;
+                })
+                .catch((e) => {});
+            } else {
+              const ph = document.createElement('div');
+              ph.className = 'thumb';
+              card.appendChild(ph);
+            }
+
+            const nameEl = document.createElement('div');
+            nameEl.className = 'presetName';
+            nameEl.textContent = name;
+            card.appendChild(nameEl);
+
+            if (grid) grid.appendChild(card);
+          }
+
+          _state.presetThumbAssetIds = Array.from(new Set(thumbAssetIds.map(String)));
+          pruneAssetUrlCache();
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          el('presetsSummary').textContent = msg ? 'error' : 'error';
+        } finally {
+          _state.presetsInFlight = false;
+        }
+      }
+
+      function startLive(token) {
+        const t = String(token || '').trim();
+        if (!t) return;
+
+        _state.token = t;
+        refreshQueue(t);
+        refreshPresets(t);
+        refreshSystem(t);
+
+        if (_state.liveInterval) return;
+        _state.liveInterval = setInterval(() => {
+          const tok = String(_state.token || '').trim();
+          if (!tok) return;
+          refreshQueue(tok);
+          refreshPresets(tok);
+          refreshSystem(tok);
+        }, 2000);
+      }
+
+      async function pollTask(taskId, token, seq) {
+        while (true) {
+          if (seq !== _state.pollSeq) throw new Error('Canceled');
+
+          const task = await apiFetch('/v1/tasks/' + taskId, token, { method: 'GET' });
+          const status = String(task.status || '');
+          const stage = String(task.stage || '');
+          const progress = Number(task.progress || 0);
+          setStatus('Status: ' + status + ' | Stage: ' + stage + ' | Progress: ' + Math.round(progress * 100) + '%', progress);
+
+          if (status === 'succeeded') return task;
+          if (status === 'failed') throw new Error(task.error || 'Task failed');
+
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+
+      function getCopies() {
+        const raw = getNumber('copies');
+        if (raw == null) return 1;
+        const n = Math.floor(raw);
+        if (!Number.isFinite(n) || n < 1) throw new Error('Copies must be >= 1');
+        if (n > 32) throw new Error('Copies too large');
+        return n;
+      }
+
+      async function queueCopies() {
+        const token = normalizeToken(getValue('token'));
+        if (!token) throw new Error('Token required');
+        el('token').value = token;
+        saveDevToken(token);
+
+        startLive(token);
+
+        const copies = getCopies();
+        const payload = await buildRequestPayload(true);
+
+        setStatus('Queueing ' + copies + '...', 0.02);
+
+        let lastTaskId = null;
+        for (let i = 0; i < copies; i++) {
+          const submitRes = await apiFetch('/v1/images/generations', token, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const taskId = submitRes.task_id;
+          lastTaskId = taskId;
+          el('task_id').textContent = String(taskId || '-');
+          setStatus(
+            'Queued ' + (i + 1) + '/' + copies + (taskId ? ' · ' + String(taskId) : ''),
+            0.02 + 0.38 * ((i + 1) / Math.max(1, copies))
+          );
+        }
+
+        for (const k of Object.keys(payload)) payload[k] = null;
+
+        if (lastTaskId) {
+          el('task_id').textContent = String(lastTaskId);
+        }
+        setStatus('Queued ' + copies + ' tasks.', 0.4);
+        await refreshQueue(token);
+      }
+
+      async function submit() {
+        const token = normalizeToken(getValue('token'));
+        if (!token) throw new Error('Token required');
+        el('token').value = token;
+        saveDevToken(token);
+
+        startLive(token);
+        const payload = await buildRequestPayload(true);
+
+        clearOutput();
+        setProcessing(true);
+        setStatus('Submitting...', 0.02);
+
+        const submitRes = await apiFetch('/v1/images/generations', token, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        for (const k of Object.keys(payload)) payload[k] = null;
+
+        const taskId = submitRes.task_id;
+        el('task_id').textContent = String(taskId || '-');
+        setStatus('Queued: ' + taskId, 0.05);
+
+        _state.pollSeq += 1;
+        const seq = _state.pollSeq;
+
+        const task = await pollTask(taskId, token, seq);
+        const assetId = task.result && task.result.asset_id;
+        if (!assetId) throw new Error('No asset_id in result');
+        el('asset_id').textContent = String(assetId);
+        _state.lastAssetId = String(assetId);
+        _state.lastTaskId = String(taskId);
+        _state.lastRequest = task.request || payload;
+        attachDragAssetId(el('result'), String(assetId));
+
+        // Add special click handler for result image to pass task context
+        const resultImg = el('result');
+        if (resultImg) {
+          resultImg.removeEventListener('click', resultImg._modalHandler);
+          resultImg._modalHandler = async () => {
+            await openDetailsModal(String(assetId), String(taskId));
+            // Also set the request for load-into-run
+            _state.currentModalRequest = _state.lastRequest;
+          };
+          resultImg.addEventListener('click', resultImg._modalHandler);
+        }
+
+        setStatus('Downloading...', 0.9);
+        const url = await downloadAsset(assetId, token);
+        if (_state.lastObjectUrl) {
+          try {
+            URL.revokeObjectURL(_state.lastObjectUrl);
+          } catch (e) {}
+        }
+        _state.lastObjectUrl = url;
+
+        el('result').src = url;
+        el('openResult').href = url;
+        el('openResult').style.visibility = 'visible';
+
+        setProcessing(false);
+        setStatus('Done.', 1);
+      }
+
+      // Initialize event listeners after a small delay to ensure DOM is ready
+      setTimeout(() => {
+        el('connect').addEventListener('click', async () => {
+          const btn = el('connect');
+          const originalText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Connecting...';
+          btn.style.opacity = '0.6';
+
+          try {
+            await connect();
+            btn.textContent = 'Connected';
+            btn.style.backgroundColor = '#00FF41';
+            btn.style.color = '#000';
+            setTimeout(() => {
+              btn.textContent = 'Reconnect';
+              btn.style.backgroundColor = '';
+              btn.style.color = '';
+            }, 3000);
+          } catch (err) {
+            const msg = err && err.message ? err.message : String(err);
+            setDot(el('dotCaps'), 'bad');
+            el('capsText').textContent = msg || 'capabilities error';
+            el('capsSummary').textContent = 'error';
+            setStatus('Error: ' + msg, 0);
+            btn.textContent = 'Retry';
+            btn.style.backgroundColor = '#FF0040';
+            setTimeout(() => {
+              btn.textContent = originalText;
+              btn.style.backgroundColor = '';
+            }, 3000);
+          } finally {
+            btn.disabled = false;
+            btn.style.opacity = '';
+          }
+        });
+      }, 100);
+
+      el('adminSelfTest').addEventListener('click', async () => {
+        const btn = el('adminSelfTest');
+        btn.disabled = true;
+        try {
+          const tok = String(_state.token || normalizeToken(getValue('token')) || '').trim();
+          if (!tok) throw new Error('Token required');
+
+          _state.token = tok;
+          startLive(tok);
+
+          const mode = getValue('mode').trim() || 'txt2img';
+          const model = getValue('model').trim() || 'schnell';
+          const steps = getNumber('steps');
+          const copies = getCopies();
+
+          const payload = {
+            mode,
+            model,
+            copies,
+            spawn_nodes: 1,
+            cleanup: true,
+            timeout_seconds: 1200,
+            poll_interval_seconds: 1.0,
+          };
+          if (steps != null) payload.steps = Math.max(1, Math.floor(steps));
+
+          setNodesAdminHint('Running self-test...');
+          el('adminSelfTestOutput').value = '';
+          _state.lastSelfTest = null;
+          _state.selfTestError = '';
+
+          const report = await apiFetch('/v1/admin/self-test', tok, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          _state.lastSelfTest = report;
+          el('adminSelfTestOutput').value = JSON.stringify(report, null, 2);
+
+          const ok = report && report.ok === true;
+          setNodesAdminHint(ok ? 'Self-test passed.' : 'Self-test failed.');
+
+          await refreshSystem(tok);
+          await refreshQueue(tok);
+          await refreshPresets(tok);
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          _state.lastSelfTest = null;
+          _state.selfTestError = msg || 'Self-test failed';
+          setNodesAdminHint(_state.selfTestError);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      el('adminCopySelfTest').addEventListener('click', async () => {
+        const btn = el('adminCopySelfTest');
+        btn.disabled = true;
+        try {
+          const report = _state.lastSelfTest;
+          const text = report ? JSON.stringify(report, null, 2) : String(getValue('adminSelfTestOutput') || '').trim();
+          if (!text) throw new Error('No self-test JSON to copy');
+          await copyText(text);
+          setNodesAdminHint('Copied self-test JSON.');
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          setNodesAdminHint(msg || 'Copy failed');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      el('adminSpawnNode').addEventListener('click', async () => {
+        const btn = el('adminSpawnNode');
+        btn.disabled = true;
+        try {
+          const tok = String(_state.token || normalizeToken(getValue('token')) || '').trim();
+          if (!tok) throw new Error('Token required');
+
+          const nodeId = getValue('adminSpawnNodeId').trim();
+          const maxWorkersRaw = getValue('adminSpawnMaxWorkers').trim();
+          let maxWorkers = null;
+          if (maxWorkersRaw) {
+            const n = Number(maxWorkersRaw);
+            if (!Number.isFinite(n) || n < 1) throw new Error('Invalid max workers');
+            maxWorkers = Math.floor(n);
+          }
+
+          const payload = { enabled: true };
+          if (nodeId) payload.node_id = nodeId;
+          if (maxWorkers !== null) payload.max_workers = maxWorkers;
+
+          setNodesAdminHint('Spawning local node...');
+          const res = await apiFetch('/v1/admin/nodes/spawn', tok, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const spawnedId = res && res.node && res.node.node_id ? String(res.node.node_id) : (nodeId || 'node');
+          setNodesAdminHint('Spawned ' + spawnedId + '.');
+
+          _state.token = tok;
+          await refreshSystem(tok);
+          await refreshQueue(tok);
+          await refreshPresets(tok);
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          setNodesAdminHint(msg || 'Failed to spawn node');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      el('mode').addEventListener('change', () => {
+        refreshModeUI();
+      });
+
+      el('model').addEventListener('change', () => {
+        refreshModelHints();
+      });
+
+      el('reset').addEventListener('click', () => {
+        clearOutput();
+      });
+
+      el('copyRequest').addEventListener('click', async () => {
+        const btn = el('copyRequest');
+        btn.disabled = true;
+        try {
+          const include = Boolean(el('copyIncludeAttachments') && el('copyIncludeAttachments').checked);
+          setStatus('Copying request JSON...', 0);
+          const payload = await buildRequestPayload(include);
+          await copyText(JSON.stringify(payload, null, 2));
+          for (const k of Object.keys(payload)) payload[k] = null;
+          setStatus('Copied request JSON' + (include ? ' (with base64)' : ''), 0);
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          setStatus('Error: ' + msg, 0);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      el('savePreset').addEventListener('click', async () => {
+        const btn = el('savePreset');
+        btn.disabled = true;
+        try {
+          const token = _state.token || normalizeToken(getValue('token'));
+          if (!token) throw new Error('Token required');
+          startLive(token);
+
+          const mode = getValue('mode').trim();
+          const model = getValue('model').trim();
+          const p = getValue('prompt').trim();
+          const suggested =
+            (model ? model + ' ' : '') +
+            (mode ? mode : 'preset') +
+            (p ? ' - ' + truncateText(p, 32) : '');
+
+          const name = String(window.prompt('Preset name', suggested) || '').trim();
+          if (!name) throw new Error('Preset name required');
+
+          setStatus('Saving preset...', 0);
+          const request = await buildRequestPayload(false);
+          const thumb = _state.lastAssetId ? String(_state.lastAssetId) : null;
+
+          await apiFetch('/v1/presets', token, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, request, thumbnail_asset_id: thumb }),
+          });
+
+          setStatus('Preset saved.', 0);
+          await refreshPresets(token);
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          setStatus('Error: ' + msg, 0);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.defaultPrevented) return;
+
+        const key = String(e.key || '');
+        const tag = e.target && e.target.tagName ? String(e.target.tagName).toLowerCase() : '';
+        const isField = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+        if ((e.metaKey || e.ctrlKey) && key === 'Enter') {
+          const btn = el('submit');
+          if (btn && !btn.disabled) {
+            e.preventDefault();
+            btn.click();
+          }
+          return;
+        }
+
+        if (key === 'Escape') {
+          const btn = el('reset');
+          if (btn && !btn.disabled) {
+            e.preventDefault();
+            btn.click();
+          }
+          return;
+        }
+
+        if (key === '/' && !isField && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          const p = el('prompt');
+          if (p) {
+            e.preventDefault();
+            p.focus();
+          }
+        }
+      });
+
+      el('submit').addEventListener('click', async () => {
+        const btn = el('submit');
+        const queueBtn = el('queue');
+        btn.disabled = true;
+        if (queueBtn) queueBtn.disabled = true;
+        try {
+          await submit();
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          if (msg === 'Canceled') {
+            return;
+          }
+          setProcessing(false);
+          setStatus('Error: ' + msg, 0);
+        } finally {
+          btn.disabled = false;
+          if (queueBtn) queueBtn.disabled = false;
+        }
+      });
+
+      el('queue').addEventListener('click', async () => {
+        const btn = el('queue');
+        const submitBtn = el('submit');
+        btn.disabled = true;
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+          await queueCopies();
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          setStatus('Error: ' + msg, 0);
+        } finally {
+          btn.disabled = false;
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+
+      el('adminAddNode').addEventListener('click', async () => {
+        const btn = el('adminAddNode');
+        btn.disabled = true;
+        try {
+          const tok = String(_state.token || normalizeToken(getValue('token')) || '').trim();
+          if (!tok) throw new Error('Token required');
+
+          const nodeId = getValue('adminNodeId').trim();
+          const baseUrl = getValue('adminNodeUrl').trim().replace(/\/$/, '');
+          let nodeToken = normalizeToken(getValue('adminNodeToken'));
+          if (!nodeToken) nodeToken = tok;
+
+          if (!nodeId) throw new Error('Node ID required');
+          if (!baseUrl) throw new Error('Base URL required');
+
+          setNodesAdminHint('Adding node ' + nodeId + '...');
+          await apiFetch('/v1/admin/nodes', tok, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ node_id: nodeId, base_url: baseUrl, token: nodeToken, enabled: true }),
+          });
+
+          setNodesAdminHint('Added node ' + nodeId + '.');
+          _state.token = tok;
+          await refreshSystem(tok);
+          await refreshQueue(tok);
+          await refreshPresets(tok);
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          setNodesAdminHint(msg || 'Failed to add node');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      el('adminClearNodeForm').addEventListener('click', () => {
+        el('adminNodeId').value = '';
+        el('adminNodeUrl').value = '';
+        el('adminNodeToken').value = '';
+        setNodesAdminHint('');
+      });
+
+      el('adminClearSpawnForm').addEventListener('click', () => {
+        el('adminSpawnNodeId').value = '';
+        el('adminSpawnMaxWorkers').value = '';
+        setNodesAdminHint('');
+      });
+      el('token').addEventListener('input', () => {
+        saveDevToken(getValue('token'));
+      });
+
+      // Setup modal handlers on load
+      setupModalHandlers()
+
+      // Prompt Helper functionality
+      const promptTemplates = {
+        templates: [
+          {
+            name: 'Photorealistic Portrait',
+            text: 'ultra realistic portrait photo of {subject}, professional photography, studio lighting, depth of field, high resolution, detailed skin texture, natural colors',
+            tags: ['portrait', 'realistic', 'photo']
+          },
+          {
+            name: 'Cinematic Scene',
+            text: 'cinematic still of {scene}, dramatic lighting, volumetric fog, wide angle lens, movie poster quality, epic composition, high detail',
+            tags: ['cinematic', 'dramatic', 'scene']
+          },
+          {
+            name: 'Digital Art',
+            text: 'digital artwork of {subject}, trending on artstation, concept art, highly detailed, sharp focus, illustration, art by greg rutkowski and alphonse mucha',
+            tags: ['digital', 'artwork', 'illustration']
+          },
+          {
+            name: 'Anime Style',
+            text: 'anime style illustration of {character}, studio ghibli aesthetic, detailed eyes, vibrant colors, soft shading, cel shaded, masterpiece',
+            tags: ['anime', 'illustration', 'stylized']
+          },
+          {
+            name: 'Product Photography',
+            text: 'product photography of {product}, white background, studio lighting, commercial photography, high resolution, clean composition, professional',
+            tags: ['product', 'commercial', 'clean']
+          },
+          {
+            name: 'Landscape Vista',
+            text: 'breathtaking landscape photo of {location}, golden hour lighting, wide vista, national geographic quality, ultra detailed, 8k resolution',
+            tags: ['landscape', 'nature', 'scenic']
+          },
+          {
+            name: 'Cyberpunk Aesthetic',
+            text: 'cyberpunk {scene}, neon lights, rain-slicked streets, holographic displays, dystopian atmosphere, blade runner aesthetic, high contrast',
+            tags: ['cyberpunk', 'futuristic', 'neon']
+          },
+          {
+            name: 'Abstract Composition',
+            text: 'abstract {concept}, geometric shapes, vibrant gradients, modern art, dynamic composition, bold colors, minimalist design',
+            tags: ['abstract', 'geometric', 'modern']
+          }
+        ],
+        benchmarks: [
+          {
+            name: 'BENCHMARK: Texture Quality',
+            text: 'macro photograph of a dewdrop on a spider web at sunrise, extreme close-up, bokeh background, intricate web structure visible, prismatic light refraction in droplet, ultra high resolution 8k',
+            tags: ['benchmark', 'texture', 'detail']
+          },
+          {
+            name: 'BENCHMARK: Human Anatomy',
+            text: 'portrait of an elderly person with weathered hands holding a vintage pocket watch, natural window light, visible skin texture and wrinkles, emotional expression, photorealistic rendering',
+            tags: ['benchmark', 'anatomy', 'realism']
+          },
+          {
+            name: 'BENCHMARK: Complex Scene',
+            text: 'bustling cyberpunk marketplace at night, multiple vendors, holographic signs in Japanese, rain reflections on ground, crowd of diverse characters, steam from food stalls, neon lighting, depth layers',
+            tags: ['benchmark', 'complexity', 'composition']
+          },
+          {
+            name: 'BENCHMARK: Lighting Physics',
+            text: 'crystal prism dispersing white light into rainbow spectrum, dark room, single beam of sunlight, caustic light patterns on walls, physically accurate light behavior, volumetric light rays',
+            tags: ['benchmark', 'lighting', 'physics']
+          },
+          {
+            name: 'BENCHMARK: Art Style Transfer',
+            text: 'the golden gate bridge painted in the style of van gogh starry night, swirling brushstrokes, impasto technique, vibrant yellows and blues, expressive artistic interpretation',
+            tags: ['benchmark', 'style', 'artistic']
+          }
+        ],
+        hapaPhilosophy: `
+          <div style="font-family: 'Inter', sans-serif; color: rgba(241, 245, 249, 0.9); line-height: 1.6;">
+            <h3 style="color: rgb(147, 197, 253); margin-bottom: 16px;">Hapa Style Prompt Philosophy</h3>
+
+            <div style="margin-bottom: 20px;">
+              <h4 style="color: rgb(147, 197, 253); font-size: 14px; margin-bottom: 8px;">Core Principles</h4>
+              <ul style="list-style: none; padding: 0;">
+                <li style="padding: 4px 0;">• <strong>Precision over Verbosity:</strong> Be specific but concise</li>
+                <li style="padding: 4px 0;">• <strong>Layer Your Intentions:</strong> Subject → Style → Technical → Atmosphere</li>
+                <li style="padding: 4px 0;">• <strong>Anchor with References:</strong> Use known artists, movements, or techniques</li>
+                <li style="padding: 4px 0;">• <strong>Technical Awareness:</strong> Include camera, lens, and lighting specifics when relevant</li>
+              </ul>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <h4 style="color: rgb(147, 197, 253); font-size: 14px; margin-bottom: 8px;">Prompt Structure</h4>
+              <ol style="padding-left: 20px;">
+                <li><strong>Subject:</strong> What/who is the focus</li>
+                <li><strong>Action/State:</strong> What they're doing or how they appear</li>
+                <li><strong>Environment:</strong> Where/context</li>
+                <li><strong>Style/Medium:</strong> Artistic approach</li>
+                <li><strong>Technical:</strong> Camera, lighting, rendering</li>
+                <li><strong>Quality markers:</strong> Resolution, detail level</li>
+              </ol>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <h4 style="color: rgb(147, 197, 253); font-size: 14px; margin-bottom: 8px;">Power Words</h4>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">masterpiece</span>
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">photorealistic</span>
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">volumetric</span>
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">cinematic</span>
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">intricate</span>
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">ethereal</span>
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">dynamic</span>
+                <span style="padding: 4px 8px; background: rgba(139, 92, 246, 0.2); border-radius: 4px;">atmospheric</span>
+              </div>
+            </div>
+
+            <div>
+              <h4 style="color: rgb(147, 197, 253); font-size: 14px; margin-bottom: 8px;">Negative Prompt Strategy</h4>
+              <p style="margin-bottom: 8px;">Use negative prompts to explicitly exclude unwanted elements:</p>
+              <code style="display: block; padding: 8px; background: rgba(2, 6, 23, 0.6); border-radius: 4px; font-size: 12px;">
+                blurry, low quality, distorted, disfigured, bad anatomy, watermark, text, logo, oversaturated
+              </code>
+            </div>
+          </div>
+        `
+      }
+
+      function setupPromptHelper() {
+        const helperBtn = el('promptHelperBtn')
+        const modal = el('promptHelperModal')
+        const closeBtn = el('promptHelperClose')
+        const content = el('promptHelperContent')
+        const tabs = modal.querySelectorAll('.prompt-helper-tab')
+
+        if (!helperBtn || !modal) return
+
+        // Open modal
+        helperBtn.addEventListener('click', () => {
+          modal.classList.add('visible')
+          renderPromptHelperContent('templates')
+        })
+
+        // Close modal
+        closeBtn.addEventListener('click', () => {
+          modal.classList.remove('visible')
+        })
+
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && modal.classList.contains('visible')) {
+            modal.classList.remove('visible')
+          }
+        })
+
+        // Tab switching
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'))
+            tab.classList.add('active')
+            renderPromptHelperContent(tab.dataset.tab)
+          })
+        })
+
+        // Keyboard shortcut (Shift+P)
+        document.addEventListener('keydown', (e) => {
+          if (e.shiftKey && e.key === 'P') {
+            e.preventDefault()
+            modal.classList.toggle('visible')
+            if (modal.classList.contains('visible')) {
+              renderPromptHelperContent('templates')
+            }
+          }
+        })
+      }
+
+      function renderPromptHelperContent(tab) {
+        const content = el('promptHelperContent')
+        if (!content) return
+
+        switch(tab) {
+          case 'templates':
+            renderPromptTemplates(promptTemplates.templates)
+            break
+          case 'builder':
+            renderPromptBuilder()
+            break
+          case 'benchmarks':
+            renderPromptTemplates(promptTemplates.benchmarks)
+            break
+          case 'philosophy':
+            content.innerHTML = promptTemplates.hapaPhilosophy
+            break
+        }
+      }
+
+      function renderPromptTemplates(templates) {
+        const content = el('promptHelperContent')
+        if (!content) return
+
+        content.innerHTML = templates.map(template => `
+          <div class="prompt-template" onclick="insertPromptTemplate('${template.text.replace(/'/g, "\\'")}')">
+            <div class="prompt-template-name">${template.name}</div>
+            <div class="prompt-template-text">${template.text}</div>
+            <div class="prompt-template-tags">
+              ${template.tags.map(tag => `<span class="prompt-template-tag">${tag}</span>`).join('')}
+            </div>
+          </div>
+        `).join('')
+      }
+
+      function renderPromptBuilder() {
+        const content = el('promptHelperContent')
+        if (!content) return
+
+        content.innerHTML = `
+          <div class="prompt-builder-section">
+            <div class="prompt-builder-label">SUBJECT</div>
+            <input type="text" class="prompt-builder-input" id="builderSubject" placeholder="e.g., a majestic eagle, futuristic city, abstract concept" />
+          </div>
+
+          <div class="prompt-builder-section">
+            <div class="prompt-builder-label">STYLE</div>
+            <input type="text" class="prompt-builder-input" id="builderStyle" placeholder="e.g., photorealistic, anime, oil painting, cyberpunk" />
+          </div>
+
+          <div class="prompt-builder-section">
+            <div class="prompt-builder-label">LIGHTING</div>
+            <input type="text" class="prompt-builder-input" id="builderLighting" placeholder="e.g., golden hour, studio lighting, neon glow, dramatic shadows" />
+          </div>
+
+          <div class="prompt-builder-section">
+            <div class="prompt-builder-label">CAMERA/TECHNICAL</div>
+            <input type="text" class="prompt-builder-input" id="builderTechnical" placeholder="e.g., 85mm lens, bokeh, wide angle, tilt-shift" />
+          </div>
+
+          <div class="prompt-builder-section">
+            <div class="prompt-builder-label">QUALITY MARKERS</div>
+            <input type="text" class="prompt-builder-input" id="builderQuality" placeholder="e.g., 8k, highly detailed, masterpiece, award winning" />
+          </div>
+
+          <div class="prompt-builder-section">
+            <div class="prompt-builder-label">PREVIEW</div>
+            <div class="prompt-builder-preview" id="builderPreview">Your prompt will appear here...</div>
+          </div>
+
+          <button class="prompt-insert-btn" onclick="insertBuiltPrompt()">INSERT INTO PROMPT FIELD</button>
+        `
+
+        // Add live preview
+        const inputs = content.querySelectorAll('.prompt-builder-input')
+        inputs.forEach(input => {
+          input.addEventListener('input', updateBuilderPreview)
+        })
+      }
+
+      function updateBuilderPreview() {
+        const preview = el('builderPreview')
+        if (!preview) return
+
+        const subject = el('builderSubject')?.value || ''
+        const style = el('builderStyle')?.value || ''
+        const lighting = el('builderLighting')?.value || ''
+        const technical = el('builderTechnical')?.value || ''
+        const quality = el('builderQuality')?.value || ''
+
+        const parts = [subject, style, lighting, technical, quality].filter(p => p.trim())
+        preview.textContent = parts.length > 0 ? parts.join(', ') : 'Your prompt will appear here...'
+      }
+
+      function insertPromptTemplate(template) {
+        const promptField = el('prompt')
+        if (promptField) {
+          promptField.value = template
+          promptField.dispatchEvent(new Event('input'))
+        }
+        el('promptHelperModal')?.classList.remove('visible')
+      }
+
+      function insertBuiltPrompt() {
+        const subject = el('builderSubject')?.value || ''
+        const style = el('builderStyle')?.value || ''
+        const lighting = el('builderLighting')?.value || ''
+        const technical = el('builderTechnical')?.value || ''
+        const quality = el('builderQuality')?.value || ''
+
+        const parts = [subject, style, lighting, technical, quality].filter(p => p.trim())
+        const builtPrompt = parts.join(', ')
+
+        if (builtPrompt) {
+          insertPromptTemplate(builtPrompt)
+        }
+      }
+
+      // Make functions globally available
+      window.insertPromptTemplate = insertPromptTemplate
+      window.insertBuiltPrompt = insertBuiltPrompt
+      window.updateBuilderPreview = updateBuilderPreview
+
+      // Initialize prompt helper
+      setupPromptHelper()
+    })()
+    </script>
+  </body>
+</html>
