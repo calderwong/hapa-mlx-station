@@ -226,15 +226,15 @@ Apple Silicon media-generation station and hub that exposes local image/media ge
 
 ### Related Hapa nodes
 
-- `hapa-dev-proto` — Primary local-first app; many nodes feed it cards, assets, chat, debug, or projection data.
-- `Hapa_Worldbuilding_Wiki` — Canonical Markdown graph for lore, nodes, names, cards, systems, and provenance.
-- `.Overwatch` — Operations map: inventory, source index, task inbox, protocols, and runbooks.
-- `hapa-telemetry-node` — Discovery/monitoring hub for node health, capabilities, launchers, and relationships.
-- `hapa-keys-node` — Local key vault used by authenticated nodes and tools.
-- `hapa-lore-node` — Chronicle/canon service for daily progress, lore, and searchable wisdom.
-- `hapa-anvil-node` — Card standardization/evaluation/forge node for turning raw card ideas into usable artifacts.
-- `hapa-janus-world-node` — World-state truth kernel and event tape for Janus/desktop simulation work.
-- `hapa-lance-node` — Local indexing/projection layer for cards, wiki chunks, embeddings, and multimodal records.
+- [hapa-dev-proto](https://github.com/calderwong/hapa-dev-proto-private) — Primary local-first app; many nodes feed it cards, assets, chat, debug, or projection data.
+- [Hapa_Worldbuilding_Wiki](https://github.com/calderwong/hapa-worldbuilding-wiki) — Canonical Markdown graph for lore, nodes, names, cards, systems, and provenance.
+- [.Overwatch](https://github.com/calderwong/overwatch) — Operations map: inventory, source index, task inbox, protocols, and runbooks.
+- [hapa-telemetry-node](https://github.com/calderwong/hapa-telemetry-node) — Discovery/monitoring hub for node health, capabilities, launchers, and relationships.
+- [hapa-keys-node](https://github.com/calderwong/hapa-keys-node) — Local key vault used by authenticated nodes and tools.
+- [hapa-lore-node](https://github.com/calderwong/hapa-lore-node) — Chronicle/canon service for daily progress, lore, and searchable wisdom.
+- [hapa-anvil-node](https://github.com/calderwong/hapa-anvil-node) — Card standardization/evaluation/forge node for turning raw card ideas into usable artifacts.
+- [hapa-janus-world-node](https://github.com/calderwong/hapa-janus-world-node) — World-state truth kernel and event tape for Janus/desktop simulation work.
+- [hapa-lance-node](https://github.com/calderwong/hapa-lance-node) — Local indexing/projection layer for cards, wiki chunks, embeddings, and multimodal records.
 
 ### Operating contract
 
